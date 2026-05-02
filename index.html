@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRAVITIQ Supply Chain OS</title>
+    <title>XID Supply Chain OS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* GRAVITIQ Brand Color Palette */
+            /* XID Brand Color Palette */
             --primary: #1B4242;       
             --primary-hover: #112A2A; 
             --primary-light: #E8EFEF; 
@@ -88,7 +88,7 @@
         }
 
         .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
-        .nav-item.active { color: white; border-bottom-color: #65B891; /* Mint accent */ }
+        .nav-item.active { color: white; border-bottom-color: #65B891; }
 
         /* --- PAGE ROUTING SYSTEM --- */
         .page-view { display: none; padding: 30px 20px; animation: fadeIn 0.3s ease; }
@@ -156,14 +156,8 @@
         .module-card p { margin: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; flex-grow: 1; }
         .module-card .launch-text { color: var(--primary); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
 
-        /* --- EXISTING REORDER TOOL STYLES --- */
-        .panel {
-            background: var(--surface);
-            padding: 24px 32px;
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-        }
+        /* --- UI COMPONENTS --- */
+        .panel { background: var(--surface); padding: 24px 32px; border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
         .header-title { font-size: 1.75rem; color: var(--text-main); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
         .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .control-group { display: flex; flex-direction: column; gap: 8px; }
@@ -205,15 +199,18 @@
         .grid-inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 16px; }
         .results-box { background-color: #FAFCFC; border-color: var(--border); }
         .result-stat { font-size: 1rem; font-weight: 600; margin-bottom: 12px; padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
-        .chart-container { grid-column: 1 / -1; height: 340px; position: relative; background: white; padding: 20px; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); }
+        .chart-container { grid-column: 1 / -1; height: 360px; position: relative; background: white; padding: 20px; border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; box-shadow: var(--shadow-sm); }
         .chart-wrapper { position: relative; flex-grow: 1; width: 100%; }
         .transit-badge { background: white; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; min-width: 90px; align-items: center; box-shadow: var(--shadow-sm); }
         .transit-scroll::-webkit-scrollbar { height: 6px; }
         .transit-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
-        
-        /* Utility */
         .blank-state { text-align: center; padding: 100px 20px; color: var(--text-muted); }
         .blank-state svg { width: 64px; height: 64px; color: var(--border); margin-bottom: 16px; }
+        
+        /* Forecast Specific Inputs */
+        .weight-input-group { position: relative; display: flex; align-items: center; }
+        .weight-input-group input { padding-right: 24px; text-align: right; }
+        .weight-input-group span { position: absolute; right: 10px; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
     </style>
 </head>
 <body>
@@ -221,7 +218,7 @@
     <nav class="top-nav">
         <div class="nav-logo" onclick="navigateTo('home')">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#65B891" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            GRAVITIQ
+            XID
         </div>
         <div class="nav-links">
             <div id="nav-home" class="nav-item active" onclick="navigateTo('home')">Home</div>
@@ -244,7 +241,7 @@
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                 </div>
                 <h3>Forecast Engine</h3>
-                <p>Analyze historical sales data to generate accurate 12-month demand predictions.</p>
+                <p>Analyze historical sales data (7 to 180 days) to calculate weighted DSRs and visualize past/future trends.</p>
                 <div class="launch-text">Open Module <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
             </div>
 
@@ -277,6 +274,72 @@
         </div>
     </main>
 
+    <main id="page-forecast" class="page-view">
+        <div class="container">
+            <div class="panel">
+                <div class="header-title">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary)"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    Forecast Engine
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -10px; margin-bottom: 20px;">Use historical sales velocity to generate a short-term 180-day forecast projection.</p>
+                
+                <div class="controls-grid" style="margin-bottom: 20px; align-items: end;">
+                    <div class="control-group">
+                        <label>Forecast Data Template</label>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn btn-secondary" onclick="downloadForecastTemplate()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                CSV Template
+                            </button>
+                            <input type="file" id="csvForecastUpload" accept=".csv" onchange="handleForecastFileUpload(event)" class="modern-input" style="flex-grow: 1; padding: 6px;">
+                        </div>
+                    </div>
+                    <div class="control-group" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="calculateForecast()" style="height: 38px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            Calculate Projections
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="padding: 0; overflow: hidden;">
+                <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-color);">
+                    <h2 style="margin-bottom: 6px;">Forecast Projection Dashboard</h2>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Summary of calculated blended DSR and projected demand over the next 180 days.</p>
+                </div>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>iSKU ID</th>
+                                <th>Market</th>
+                                <th class="text-center">Blended DSR</th>
+                                <th class="text-right">Next 30 Days</th>
+                                <th class="text-right">Next 90 Days</th>
+                                <th class="text-right" style="color: var(--primary);">Next 180 Days</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastDashboardBody">
+                            <tr><td colspan="6" class="text-center" style="padding: 40px; color: var(--text-muted);">Add iSKUs below to view forecast summary.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+                <h2 style="margin: 0; color: var(--text-main);">Historical Data Entry</h2>
+                <button class="btn btn-secondary" onclick="addForecastRow()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add Blank Forecast iSKU
+                </button>
+            </div>
+
+            <div id="forecastContainer" class="isku-list" style="margin-bottom: 60px;">
+                </div>
+        </div>
+    </main>
+
     <main id="page-reorder" class="page-view">
         <div class="container">
             <div class="panel">
@@ -304,7 +367,7 @@
                     
                     <div class="control-group" style="justify-content: flex-end;">
                         <button class="btn btn-primary" onclick="calculateReorder()" style="height: 38px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 0 20.49 15"></path></svg>
                             Calculate & Update
                         </button>
                     </div>
@@ -377,7 +440,7 @@
 
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
                 <h2 style="margin: 0; color: var(--text-main);">iSKU Data Entry Details</h2>
-                <button class="btn btn-secondary" onclick="addRow()">
+                <button class="btn btn-secondary" onclick="addReorderRow()">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     Add Blank iSKU
                 </button>
@@ -385,17 +448,6 @@
 
             <div id="iskuContainer" class="isku-list" style="margin-bottom: 60px;">
                 </div>
-        </div>
-    </main>
-
-    <main id="page-forecast" class="page-view">
-        <div class="container">
-            <div class="panel blank-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                <h2>Forecast Module</h2>
-                <p>This module is under construction. It will allow you to generate DSRs based on historical CSV data.</p>
-                <button class="btn btn-primary" style="margin-top: 16px;" onclick="navigateTo('home')">Return Home</button>
-            </div>
         </div>
     </main>
 
@@ -424,33 +476,24 @@
 <script>
     // --- SOFTWARE NAVIGATION ROUTER ---
     function navigateTo(pageId) {
-        // Hide all pages
         document.querySelectorAll('.page-view').forEach(page => {
             page.classList.remove('active');
         });
-        // Remove active state from all nav links
         document.querySelectorAll('.nav-item').forEach(nav => {
             nav.classList.remove('active');
         });
 
-        // Show target page
         document.getElementById('page-' + pageId).classList.add('active');
-        
-        // Highlight active nav link (if it exists)
         const targetNav = document.getElementById('nav-' + pageId);
         if(targetNav) targetNav.classList.add('active');
 
-        // IMPORTANT: If switching to the Reorder module, force Chart.js to re-render
-        // because Chart.js cannot draw accurately while its container is display:none
-        if(pageId === 'reorder') {
-            setTimeout(() => { calculateReorder(); }, 50);
-        }
+        if(pageId === 'reorder') { setTimeout(() => { calculateReorder(); }, 50); }
+        if(pageId === 'forecast') { setTimeout(() => { calculateForecast(); }, 50); }
         
-        // Scroll to top automatically on page change
         window.scrollTo(0,0);
     }
 
-    // --- REORDER PLANNING LOGIC (Original Core Code) ---
+    // --- SHARED GLOBALS ---
     const SHIPPING_TIMES = {
         'AIR': 15,
         'FAST_SEA': 25,
@@ -462,10 +505,342 @@
         defaultDate.setMonth(defaultDate.getMonth() + 6);
         document.getElementById('targetDateInput').value = defaultDate.toISOString().split('T')[0];
         
-        addRow(); 
-        // Note: Initial calculate is deferred until Reorder page is visible to avoid Chart bug.
+        addReorderRow(); 
+        addForecastRow();
     });
 
+    function formatMMDD(dateObj) {
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        return `${mm}/${dd}`;
+    }
+
+    function getDaysFromToday(dateString, todayDate) {
+        if(!dateString) return null;
+        let d = new Date(dateString);
+        return Math.ceil((d - todayDate) / (1000 * 60 * 60 * 24));
+    }
+
+    // ==========================================
+    // MODULE: FORECAST ENGINE
+    // ==========================================
+    function downloadForecastTemplate() {
+        const headers = ["iSKU", "Market_Place", "DSR_7", "DSR_14", "DSR_30", "DSR_60", "DSR_90", "DSR_180", "W_7", "W_14", "W_30", "W_60", "W_90", "W_180"];
+        const sampleData = ["SAMPLE-FC-01", "Amazon US", "18.5", "17.0", "15.0", "14.5", "14.0", "12.0", "20", "20", "30", "15", "10", "5"];
+        const csvContent = headers.join(",") + "\n" + sampleData.join(",");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "Forecast_Input_Template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function handleForecastFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            processForecastCSVData(e.target.result);
+            calculateForecast(); 
+        };
+        reader.readAsText(file);
+    }
+
+    function processForecastCSVData(csvText) {
+        const lines = csvText.split('\n').filter(line => line.trim() !== '');
+        const container = document.getElementById('forecastContainer');
+        container.innerHTML = ''; 
+        for(let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length < 14) continue; 
+            addForecastRow(cols);
+        }
+    }
+
+    function toggleForecastCard(btn) {
+        const card = btn.closest('.isku-card');
+        card.classList.toggle('collapsed');
+        if (card.classList.contains('collapsed')) {
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="6 9 12 15 18 9"></polyline></svg> Expand Details`;
+        } else {
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="18 15 12 9 6 15"></polyline></svg> Hide Details`;
+            setTimeout(() => { calculateForecast(); }, 50);
+        }
+    }
+
+    function addForecastRow(data = null) {
+        const container = document.getElementById('forecastContainer');
+        const card = document.createElement('div');
+        card.className = 'isku-card collapsed'; 
+        
+        const v = data || [
+            "", "", 
+            "0", "0", "0", "0", "0", "0", 
+            "20", "20", "30", "15", "10", "5"
+        ];
+
+        card.innerHTML = `
+            <div class="isku-card-header">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; flex-grow: 1;">
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0; min-width: 60px;">iSKU ID:</label>
+                        <input type="text" class="modern-input fc-isku" placeholder="Enter iSKU..." value="${v[0]}" style="width: 160px; font-weight: 600;">
+                    </div>
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0;">Market:</label>
+                        <input type="text" class="modern-input fc-market" placeholder="e.g. Amazon US" value="${v[1]}" style="width: 120px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="toggleForecastCard(this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="6 9 12 15 18 9"></polyline></svg> Expand Details
+                    </button>
+                    <button class="btn btn-danger" style="padding: 8px 12px;" onclick="this.closest('.isku-card').remove(); calculateForecast();" title="Remove iSKU">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="isku-card-body">
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="section-box">
+                        <h4>Historical Velocity (DSR)</h4>
+                        <div class="grid-inputs" style="grid-template-columns: repeat(6, 1fr);">
+                            <div class="input-group"><label>Last 7 Days</label><input type="number" class="modern-input fc-dsr-7" value="${v[2]}" step="0.1" min="0"></div>
+                            <div class="input-group"><label>Last 14 Days</label><input type="number" class="modern-input fc-dsr-14" value="${v[3]}" step="0.1" min="0"></div>
+                            <div class="input-group"><label>Last 30 Days</label><input type="number" class="modern-input fc-dsr-30" value="${v[4]}" step="0.1" min="0"></div>
+                            <div class="input-group"><label>Last 60 Days</label><input type="number" class="modern-input fc-dsr-60" value="${v[5]}" step="0.1" min="0"></div>
+                            <div class="input-group"><label>Last 90 Days</label><input type="number" class="modern-input fc-dsr-90" value="${v[6]}" step="0.1" min="0"></div>
+                            <div class="input-group"><label>Last 180 Days</label><input type="number" class="modern-input fc-dsr-180" value="${v[7]}" step="0.1" min="0"></div>
+                        </div>
+                    </div>
+
+                    <div class="section-box">
+                        <h4>Algorithm Weighting Profile</h4>
+                        <p style="font-size:0.75rem; color: var(--text-muted); margin-top:-10px; margin-bottom: 12px;">Adjust how heavily each period influences the final blended DSR projection. Should total 100%.</p>
+                        <div class="grid-inputs" style="grid-template-columns: repeat(6, 1fr);">
+                            <div class="input-group"><label>7-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-7" value="${v[8]}" min="0" max="100"><span>%</span></div></div>
+                            <div class="input-group"><label>14-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-14" value="${v[9]}" min="0" max="100"><span>%</span></div></div>
+                            <div class="input-group"><label>30-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-30" value="${v[10]}" min="0" max="100"><span>%</span></div></div>
+                            <div class="input-group"><label>60-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-60" value="${v[11]}" min="0" max="100"><span>%</span></div></div>
+                            <div class="input-group"><label>90-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-90" value="${v[12]}" min="0" max="100"><span>%</span></div></div>
+                            <div class="input-group"><label>180-Day Wgt</label><div class="weight-input-group"><input type="number" class="modern-input fc-wgt-180" value="${v[13]}" min="0" max="100"><span>%</span></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="section-box results-box" style="height: 100%; border-color: var(--primary);">
+                        <h4 style="border-bottom-color: var(--border);">180-Day Projection Results</h4>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--primary); box-shadow: 0 0 0 1px var(--primary); margin-bottom: 16px;">
+                            <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">Blended Projected DSR</span>
+                            <span class="fc-res-dsr" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0.00</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                            <div style="background: white; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center;">
+                                <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Next 30 Days</span>
+                                <span class="fc-res-30" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">0</span>
+                            </div>
+                            <div style="background: white; border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center;">
+                                <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Next 90 Days</span>
+                                <span class="fc-res-90" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">0</span>
+                            </div>
+                            <div style="background: var(--primary-light); border: 1px solid #A3B5B5; padding: 12px; border-radius: 8px; text-align: center;">
+                                <span style="display: block; font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-bottom: 4px;">Next 180 Days</span>
+                                <span class="fc-res-180" style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">0</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                
+                <div class="chart-container" style="grid-column: 1 / -1;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <h4 style="margin:0;">Historical & Forecast Visualizer</h4>
+                            <div style="display:flex; gap:12px; font-size: 0.75rem;">
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:15px; border-top:2px dashed var(--text-muted);"></span> History</span>
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:15px; border-top:2px solid var(--primary);"></span> Projection</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; align-items: center; background: var(--bg-color); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500; margin:0;">
+                                <input type="checkbox" class="fc-chart-type-toggle" onchange="calculateForecast()" style="margin:0; cursor: pointer; width: 14px; height: 14px;" checked> Line Graph
+                            </label>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas class="forecast-chart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        `;
+        container.appendChild(card);
+        
+        if(container.children.length === 1 && !data) {
+            card.classList.remove('collapsed');
+            card.querySelector('.btn-secondary').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="18 15 12 9 6 15"></polyline></svg> Hide Details`;
+        }
+    }
+
+    function calculateForecast() {
+        if (!document.getElementById('page-forecast').classList.contains('active')) return;
+
+        const cards = document.getElementById('forecastContainer').querySelectorAll('.isku-card');
+        const dashboardBody = document.getElementById('forecastDashboardBody');
+        dashboardBody.innerHTML = '';
+
+        if(cards.length === 0) {
+            dashboardBody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 40px; color: var(--text-muted);">No iSKUs added yet.</td></tr>';
+            return;
+        }
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const today = new Date();
+
+        cards.forEach(card => {
+            const isku = card.querySelector('.fc-isku').value || '-';
+            const market = card.querySelector('.fc-market').value || '-';
+
+            const d7 = parseFloat(card.querySelector('.fc-dsr-7').value) || 0;
+            const d14 = parseFloat(card.querySelector('.fc-dsr-14').value) || 0;
+            const d30 = parseFloat(card.querySelector('.fc-dsr-30').value) || 0;
+            const d60 = parseFloat(card.querySelector('.fc-dsr-60').value) || 0;
+            const d90 = parseFloat(card.querySelector('.fc-dsr-90').value) || 0;
+            const d180 = parseFloat(card.querySelector('.fc-dsr-180').value) || 0;
+
+            const w7 = parseFloat(card.querySelector('.fc-wgt-7').value) || 0;
+            const w14 = parseFloat(card.querySelector('.fc-wgt-14').value) || 0;
+            const w30 = parseFloat(card.querySelector('.fc-wgt-30').value) || 0;
+            const w60 = parseFloat(card.querySelector('.fc-wgt-60').value) || 0;
+            const w90 = parseFloat(card.querySelector('.fc-wgt-90').value) || 0;
+            const w180 = parseFloat(card.querySelector('.fc-wgt-180').value) || 0;
+
+            let totalWeight = w7 + w14 + w30 + w60 + w90 + w180;
+            if (totalWeight === 0) totalWeight = 1; 
+
+            let blendedDSR = (
+                (d7 * (w7 / totalWeight)) + 
+                (d14 * (w14 / totalWeight)) + 
+                (d30 * (w30 / totalWeight)) + 
+                (d60 * (w60 / totalWeight)) + 
+                (d90 * (w90 / totalWeight)) + 
+                (d180 * (w180 / totalWeight))
+            );
+
+            let proj30 = Math.ceil(blendedDSR * 30);
+            let proj90 = Math.ceil(blendedDSR * 90);
+            let proj180 = Math.ceil(blendedDSR * 180);
+
+            card.querySelector('.fc-res-dsr').innerText = blendedDSR.toFixed(2);
+            card.querySelector('.fc-res-30').innerText = proj30.toLocaleString();
+            card.querySelector('.fc-res-90').innerText = proj90.toLocaleString();
+            card.querySelector('.fc-res-180').innerText = proj180.toLocaleString();
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight: 600;">${isku}</td>
+                <td>${market}</td>
+                <td class="text-center" style="font-weight: 600; color: var(--primary);">${blendedDSR.toFixed(2)}</td>
+                <td class="text-right">${proj30.toLocaleString()}</td>
+                <td class="text-right">${proj90.toLocaleString()}</td>
+                <td class="text-right" style="font-weight: 700; color: var(--primary);">${proj180.toLocaleString()}</td>
+            `;
+            dashboardBody.appendChild(row);
+
+            // --- FORECAST CHART LOGIC ---
+            if (card.classList.contains('collapsed')) return;
+
+            let mMinus1 = d30 * 30;
+            let mMinus2 = Math.max(0, (d60 * 60) - (d30 * 30));
+            let mMinus3 = Math.max(0, (d90 * 90) - (d60 * 60));
+            let old90  = Math.max(0, (d180 * 180) - (d90 * 90));
+            let mMinus4 = old90 / 3;
+            let mMinus5 = old90 / 3;
+            let mMinus6 = old90 / 3;
+
+            const isLine = card.querySelector('.fc-chart-type-toggle').checked;
+
+            let labels = [];
+            for(let i=6; i>=1; i--) {
+                let d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                labels.push(monthNames[d.getMonth()] + " (Hist)");
+            }
+            for(let i=0; i<6; i++) {
+                let d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+                labels.push(monthNames[d.getMonth()] + " (Proj)");
+            }
+
+            let fCastMonthly = blendedDSR * 30;
+
+            let histData = [Math.round(mMinus6), Math.round(mMinus5), Math.round(mMinus4), Math.round(mMinus3), Math.round(mMinus2), Math.round(mMinus1), null, null, null, null, null, null];
+            
+            let projData = [];
+            if (isLine) {
+                projData = [null, null, null, null, null, Math.round(mMinus1), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly)];
+            } else {
+                projData = [null, null, null, null, null, null, Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly), Math.round(fCastMonthly)];
+            }
+
+            const canvas = card.querySelector('.forecast-chart');
+            const ctx = canvas.getContext('2d');
+            if (card.chartInstance) card.chartInstance.destroy();
+
+            let histDataset = { label: 'Historical Demand', data: histData };
+            let projDataset = { label: 'Projected Demand', data: projData };
+
+            if (isLine) {
+                histDataset.borderColor = 'rgba(90, 109, 109, 0.8)'; 
+                histDataset.backgroundColor = 'transparent';
+                histDataset.borderDash = [5, 5]; 
+                histDataset.pointRadius = 4;
+                histDataset.fill = false;
+                histDataset.tension = 0.2;
+
+                projDataset.borderColor = 'rgba(27, 66, 66, 1)'; 
+                projDataset.backgroundColor = 'transparent';
+                projDataset.pointBackgroundColor = 'rgba(27, 66, 66, 1)';
+                projDataset.pointRadius = 5;
+                projDataset.fill = false;
+                projDataset.tension = 0.2;
+            } else {
+                histDataset.backgroundColor = 'rgba(209, 218, 218, 0.7)'; 
+                histDataset.borderColor = 'rgba(163, 181, 181, 1)';
+                histDataset.borderWidth = 1;
+
+                projDataset.backgroundColor = 'rgba(27, 66, 66, 0.8)'; 
+                projDataset.borderColor = 'rgba(27, 66, 66, 1)';
+                projDataset.borderWidth = 1;
+            }
+
+            card.chartInstance = new Chart(ctx, {
+                type: isLine ? 'line' : 'bar',
+                data: { labels: labels, datasets: [histDataset, projDataset] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { family: "'Inter', sans-serif" } } },
+                        tooltip: { backgroundColor: 'rgba(15, 28, 28, 0.95)', titleFont: { family: "'Inter', sans-serif" }, bodyFont: { family: "'Inter', sans-serif" } }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { family: "'Inter', sans-serif" } } },
+                        y: { title: { display: true, text: 'Monthly Demand (Units)', font: { family: "'Inter', sans-serif" } }, beginAtZero: true, grid: { color: 'rgba(209, 218, 218, 0.4)' }, ticks: { font: { family: "'Inter', sans-serif" } } }
+                    }
+                }
+            });
+        });
+    }
+
+    // ==========================================
+    // MODULE: REORDER PLANNING LOGIC
+    // ==========================================
     function downloadTemplate() {
         const headers = [
             "iSKU", "Market_Place", "ASIN", "SC_Category", "MOQ", "Case_Pack_Qty",
@@ -490,7 +865,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "iSKU_Forecast_Template.csv");
+        link.setAttribute("download", "iSKU_Reorder_Template.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -500,11 +875,9 @@
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
-            const text = e.target.result;
-            processCSVData(text);
+            processCSVData(e.target.result);
             calculateReorder(); 
         };
         reader.readAsText(file);
@@ -514,15 +887,14 @@
         const lines = csvText.split('\n').filter(line => line.trim() !== '');
         const container = document.getElementById('iskuContainer');
         container.innerHTML = ''; 
-
         for(let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',');
             if (cols.length < 29) continue; 
-            addRow(cols);
+            addReorderRow(cols);
         }
     }
 
-    function toggleCard(btn) {
+    function toggleReorderCard(btn) {
         const card = btn.closest('.isku-card');
         card.classList.toggle('collapsed');
         if (card.classList.contains('collapsed')) {
@@ -533,11 +905,10 @@
         }
     }
 
-    function addRow(data = null) {
+    function addReorderRow(data = null) {
         const container = document.getElementById('iskuContainer');
         const card = document.createElement('div');
         card.className = 'isku-card collapsed'; 
-        
         const uniqueId = 'card-' + Math.random().toString(36).substr(2, 9);
         card.id = uniqueId;
         
@@ -587,18 +958,14 @@
                         <input type="text" class="modern-input sccategory-input" placeholder="e.g. Fast Mover" value="${v[3]}" style="width: 120px;">
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="toggleCard(this)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="6 9 12 15 18 9"></polyline></svg> Expand Details
-                    </button>
-                    <button class="btn btn-danger" style="padding: 8px 12px;" onclick="this.closest('.isku-card').remove(); calculateReorder();" title="Remove iSKU">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" onclick="toggleReorderCard(this)" style="padding: 6px 10px; font-size: 0.8rem;">Edit Details</button>
+                    <button class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" onclick="this.closest('.isku-card').remove(); calculateReorder();">X</button>
                 </div>
             </div>
             
             <div class="isku-card-body">
-                <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
                     <div class="section-box">
                         <h4>Forecast (Daily Sales Rate over 12 Months)</h4>
                         <div class="grid-inputs">
@@ -609,14 +976,14 @@
                     <div class="section-box">
                         <h4>Inventory & In Transit</h4>
                         <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div class="grid-inputs" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                            <div class="grid-inputs" style="grid-template-columns: repeat(3, 1fr); gap: 12px;">
                                 <div class="input-group"><label>Amazon FBA qty</label><input type="number" class="modern-input inv-fba" value="${v[18]}" min="0"></div>
                                 <div class="input-group"><label>3PL Qty</label><input type="number" class="modern-input inv-3pl" value="${v[19]}" min="0"></div>
                                 <div class="input-group"><label>Other Whse</label><input type="number" class="modern-input inv-oth" value="${v[20]}" min="0"></div>
                             </div>
                             
                             <div class="transit-container">
-                                <div class="grid-inputs" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                                <div class="grid-inputs" style="grid-template-columns: repeat(2, 1fr); gap: 12px;">
                                     <div class="input-group"><label>Transit 1 Qty</label><input type="number" class="modern-input t-qty" value="${v[21]}" min="0"></div>
                                     <div class="input-group"><label>Transit 1 ETA</label><input type="date" class="modern-input t-eta" value="${v[22]}"></div>
                                     <div class="input-group"><label>Transit 2 Qty</label><input type="number" class="modern-input t-qty" value="${v[23]}" min="0"></div>
@@ -629,17 +996,17 @@
                     </div>
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
                     <div class="section-box">
                         <h4>Logistics & Ordering Settings</h4>
-                        <div class="grid-inputs" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <div class="grid-inputs" style="grid-template-columns: repeat(4, 1fr);">
                             <div class="input-group"><label>Mfg Lead Time (Days)</label><input type="number" class="modern-input mfg-lead" value="${v[27]}" min="0"></div>
                             <div class="input-group"><label>Buffer Days</label><input type="number" class="modern-input buffer-days" value="${v[28]}" min="0"></div>
                             <div class="input-group"><label>Min Order Qty (MOQ)</label><input type="number" class="modern-input moq-input" value="${v[4]}" min="0"></div>
                             <div class="input-group"><label>Case Pack Qty</label><input type="number" class="modern-input case-pack-input" value="${v[5]}" min="1"></div>
-                            <div class="input-group" style="grid-column: span 2;">
+                            <div class="input-group" style="grid-column: span 4;">
                                 <label>Shipping Method (Used for Total Calc)</label>
-                                <select class="modern-input shipping-method" style="max-width: 100%;">
+                                <select class="modern-input shipping-method" style="max-width: 300px;">
                                     <option value="AIR">AIR (10-15 days)</option>
                                     ${fastSeaOptCard}
                                     <option value="SLOW_SEA">SLOW SEA (40-50 days)</option>
@@ -650,52 +1017,46 @@
 
                     <div class="section-box results-box">
                         <h4 style="border-bottom-color: var(--border);">Live Reorder Calculations</h4>
-                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 8px; border: 1px solid var(--border);">
-                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Stock Status</span>
-                                <span class="oos-result" style="text-align: right;">-</span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px;">
+                            <div class="result-stat">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">OOS Days (Based on Ship Method)</span>
+                                <span class="oos-result" style="font-size: 1rem;">-</span>
                             </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--primary); box-shadow: 0 0 0 1px var(--primary);">
-                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">Total Reorder Qty</span>
-                                <span class="req-result" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0</span>
+                            <div class="result-stat">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Total Reorder (Based on Ship Method)</span>
+                                <span class="req-result" style="font-size: 1.2rem; color: var(--primary);">0</span>
                             </div>
-
-                            <div style="padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--border);">
-                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 8px;">Optimal Split Allocation</span>
-                                <div class="split-result" style="display: flex; gap: 8px; font-size: 0.85rem;">
-                                    <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">AIR<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>
-                                    ${allowFastSea ? '<div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">FST<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>' : ''}
-                                    <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">SLW<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>
-                                </div>
+                            <div class="result-stat" style="background: var(--primary-light); border-color: #A3B5B5;">
+                                <span style="font-size: 0.75rem; color: var(--primary); display: block; margin-bottom: 2px; font-weight:bold;">Optimal Split (Min Cost, Min OOS)</span>
+                                <span class="split-result" style="font-size: 0.85rem; color: var(--text-main); display: flex; justify-content: space-between; margin-top: 6px;">
+                                    <span>AIR: <b>0</b></span> ${allowFastSea ? '| <span>FST: <b>0</b></span>' : ''} | <span>SLOW: <b>0</b></span>
+                                </span>
                             </div>
-
                         </div>
                     </div>
                 </div>
                 
                 <div class="chart-container">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <h4 style="margin:0;">Inventory Projection</h4>
-                            <div style="display:flex; gap:12px; font-size: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <h4 style="margin:0; color: var(--primary);">Projected Inventory & Stock Status</h4>
+                            <div style="display:flex; gap:8px; font-size: 0.7rem;">
                                 <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--success-bg); border: 1px solid var(--success-text);"></span> Met</span>
                                 <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--warning-bg); border: 1px solid var(--warning-text);"></span> Short &le; 5d</span>
                                 <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--danger-bg); border: 1px solid var(--danger-text);"></span> Short &gt; 5d</span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 16px; align-items: center; background: var(--bg-color); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <label style="margin:0; font-size: 0.75rem; color: var(--text-muted);">View:</label>
-                                <select class="chart-interval modern-input" onchange="calculateReorder()" style="width: auto; height: 26px; padding: 0 8px; font-size: 0.75rem; cursor: pointer;">
+                        <div style="display: flex; gap: 15px; align-items: center; background: var(--bg-color); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border);">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <label style="margin:0; font-size: 0.75rem; color: var(--text-muted);">Time Frame:</label>
+                                <select class="chart-interval modern-input dash-input" onchange="calculateReorder()" style="width: auto; height: 22px; padding: 0 4px; font-size: 0.75rem; cursor: pointer;">
                                     <option value="7">Weekly</option>
                                     <option value="30" selected>Monthly</option>
                                     <option value="90">Quarterly</option>
                                 </select>
                             </div>
-                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500; margin:0;">
-                                <input type="checkbox" class="chart-type-toggle" onchange="calculateReorder()" style="margin:0; cursor: pointer; width: 14px; height: 14px;"> Line Graph
+                            <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 0.75rem; color: var(--text-main); margin:0;">
+                                <input type="checkbox" class="chart-type-toggle" onchange="calculateReorder()" style="margin:0; cursor: pointer;"> Line Graph
                             </label>
                         </div>
                     </div>
@@ -714,47 +1075,9 @@
         }
     }
 
-    function formatMMDD(dateObj) {
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getDate()).padStart(2, '0');
-        return `${mm}/${dd}`;
-    }
-
-    function getDaysFromToday(dateString, todayDate) {
-        if(!dateString) return null;
-        let d = new Date(dateString);
-        return Math.ceil((d - todayDate) / (1000 * 60 * 60 * 24));
-    }
-
-    function updateFilterDropdowns(cards) {
-        const marketSelect = document.getElementById('filterMarket');
-        const catSelect = document.getElementById('filterCategory');
-        
-        let currentMarket = marketSelect.value;
-        let currentCat = catSelect.value;
-        
-        let markets = new Set();
-        let cats = new Set();
-        
-        cards.forEach(card => {
-            let m = card.querySelector('.marketplace-input').value.trim();
-            let c = card.querySelector('.sccategory-input').value.trim();
-            if (m) markets.add(m);
-            if (c) cats.add(c);
-        });
-        
-        marketSelect.innerHTML = '<option value="all">All Market Places</option>';
-        [...markets].sort().forEach(m => marketSelect.innerHTML += `<option value="${m}">${m}</option>`);
-        marketSelect.value = markets.has(currentMarket) ? currentMarket : 'all';
-        
-        catSelect.innerHTML = '<option value="all">All Categories</option>';
-        [...cats].sort().forEach(c => catSelect.innerHTML += `<option value="${c}">${c}</option>`);
-        catSelect.value = cats.has(currentCat) ? currentCat : 'all';
-    }
-
     function applySortAndFilter() {
         const container = document.getElementById('iskuContainer');
-        let cards = Array.from(container.querySelectorAll('.isku-card'));
+        let cards = Array.from(container.querySelectorAll('#iskuContainer .isku-card'));
         const sortVal = document.getElementById('sortBy').value;
 
         cards.sort((a, b) => {
@@ -773,10 +1096,9 @@
     }
 
     function calculateReorder() {
-        // Prevent calculating if we aren't viewing the reorder page (stops bugs with Chart.js canvas size)
         if (!document.getElementById('page-reorder').classList.contains('active')) return;
 
-        const cards = document.querySelectorAll('.isku-card');
+        const cards = document.querySelectorAll('#iskuContainer .isku-card');
         const dashboardBody = document.getElementById('dashboardBody');
         const targetDateInput = document.getElementById('targetDateInput').value;
         const targetDate = new Date(targetDateInput);
@@ -790,17 +1112,11 @@
             return;
         }
 
-        updateFilterDropdowns(cards);
-
         const filterMarket = document.getElementById('filterMarket').value;
         const filterCat = document.getElementById('filterCategory').value;
-
         const diffTime = targetDate - today;
         let totalDaysToTarget = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         if (totalDaysToTarget < 0) totalDaysToTarget = 0;
-
-        let maxMonths = Math.max(1, Math.ceil(totalDaysToTarget / 30));
-        if (maxMonths > 12) maxMonths = 12;
 
         cards.forEach(card => {
             const cardId = card.id;
@@ -815,12 +1131,8 @@
             if (filterMarket !== 'all' && marketplace !== filterMarket) isVisible = false;
             if (filterCat !== 'all' && scCategory !== filterCat) isVisible = false;
 
-            if (!isVisible) {
-                card.style.display = 'none';
-                return; 
-            } else {
-                card.style.display = 'block';
-            }
+            if (!isVisible) { card.style.display = 'none'; return; } 
+            else { card.style.display = 'block'; }
 
             const allowFastSea = /\b(US|USA|CA|CANADA|JP|JAPAN)\b/i.test(marketplace);
 
@@ -831,9 +1143,7 @@
                                    (allowFastSea ? `<option value="FAST_SEA">FAST SEA (20-25 days)</option>` : ``) + 
                                    `<option value="SLOW_SEA">SLOW SEA (40-50 days)</option>`;
             
-            if (!allowFastSea && currentSelection === 'FAST_SEA') {
-                currentSelection = 'AIR';
-            }
+            if (!allowFastSea && currentSelection === 'FAST_SEA') currentSelection = 'AIR';
             cardSelect.value = currentSelection;
             const shipMethod = cardSelect.value;
 
@@ -858,11 +1168,7 @@
             for(let i=0; i < tQtyInputs.length; i++) {
                 let qty = parseInt(tQtyInputs[i].value) || 0;
                 let eta = tEtaInputs[i].value;
-                
-                if (qty > 0 || eta) {
-                    transits.push({ qty: qty, days: getDaysFromToday(eta, today) });
-                    totalTransitQty += qty;
-                }
+                if (qty > 0 || eta) { transits.push({ qty: qty, days: getDaysFromToday(eta, today) }); totalTransitQty += qty; }
 
                 transitDashboardHTML += `
                     <div class="transit-badge">
@@ -884,55 +1190,37 @@
             const shippingDays = SHIPPING_TIMES[shipMethod];
             
             const totalLeadTimeDays = mfgLead + shippingDays + bufferDays;
-            
             const lt_air = mfgLead + SHIPPING_TIMES['AIR'] + bufferDays;
             const lt_fast = mfgLead + SHIPPING_TIMES['FAST_SEA'] + bufferDays;
             const lt_slow = mfgLead + SHIPPING_TIMES['SLOW_SEA'] + bufferDays;
 
-            // --- 1. DAY-BY-DAY SIMULATION FOR OOS SPANS ---
             let simInv = fba + tpl + oth;
             let oosSpans = [];
             let isOOS = false;
             let currentSpanStart = 0;
             let totalOOSDays = 0;
-
             let arrivals = [];
+            
             transits.forEach(t => {
-                if (t.days !== null && t.days >= 0 && t.qty > 0) {
-                    arrivals.push({day: t.days, qty: t.qty});
-                } else if (t.days !== null && t.days < 0 && t.qty > 0) {
-                    simInv += t.qty;
-                }
+                if (t.days !== null && t.days >= 0 && t.qty > 0) arrivals.push({day: t.days, qty: t.qty});
+                else if (t.days !== null && t.days < 0 && t.qty > 0) simInv += t.qty;
             });
 
             for (let day = 0; day < totalLeadTimeDays; day++) { 
-                arrivals.forEach(a => {
-                    if (a.day === day) simInv += a.qty;
-                });
-
+                arrivals.forEach(a => { if (a.day === day) simInv += a.qty; });
                 let monthIdx = Math.floor(day / 30);
                 let dsr = monthIdx < 12 ? dsrValues[monthIdx] : dsrValues[11];
                 if (dsr <= 0) dsr = 0.001; 
 
                 if (simInv < dsr) {
-                    totalOOSDays++;
-                    simInv = 0; 
-                    if (!isOOS) {
-                        isOOS = true;
-                        currentSpanStart = day;
-                    }
+                    totalOOSDays++; simInv = 0; 
+                    if (!isOOS) { isOOS = true; currentSpanStart = day; }
                 } else {
                     simInv -= dsr;
-                    if (isOOS) {
-                        isOOS = false;
-                        oosSpans.push({ start: currentSpanStart, end: day - 1 });
-                    }
+                    if (isOOS) { isOOS = false; oosSpans.push({ start: currentSpanStart, end: day - 1 }); }
                 }
             }
-
-            if (isOOS) {
-                oosSpans.push({ start: currentSpanStart, end: totalLeadTimeDays - 1 });
-            }
+            if (isOOS) oosSpans.push({ start: currentSpanStart, end: totalLeadTimeDays - 1 });
 
             let oosText = `<div class="badge badge-success">Fully Covered</div>`;
             let dashOosHtml = `<span class="badge badge-success">Covered</span>`;
@@ -943,42 +1231,24 @@
                     let eDate = new Date(today.getTime()); eDate.setDate(eDate.getDate() + span.end);
                     return `${formatMMDD(sDate)} - ${formatMMDD(eDate)}`;
                 });
-                
-                oosText = `
-                    <div style="text-align: right;">
-                        <span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days OOS</span>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">${spanStrings.join('<br>')}</div>
-                    </div>
-                `;
-                dashOosHtml = `
-                    <div style="text-align: center;">
-                        <span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days</span>
-                        <div style="font-size: 0.7rem; color: var(--text-muted);">${spanStrings.join('<br>')}</div>
-                    </div>
-                `;
+                oosText = `<div style="text-align: right;"><span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days OOS</span><div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">${spanStrings.join('<br>')}</div></div>`;
+                dashOosHtml = `<div style="text-align: center;"><span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days</span><div style="font-size: 0.7rem; color: var(--text-muted);">${spanStrings.join('<br>')}</div></div>`;
             }
 
-            // --- 2. CALCULATE SINGLE REORDER QUANTITY ---
             let reorderQty = 0;
             if (totalLeadTimeDays < totalDaysToTarget) {
                 let leadTimeDemand = 0;
                 for (let d = 0; d < totalLeadTimeDays; d++) {
-                    let m = Math.floor(d / 30);
-                    let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
+                    let m = Math.floor(d / 30); let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
                     leadTimeDemand += (dsr > 0 ? dsr : 0);
                 }
-
                 let leftoverInvOnArrival = Math.max(0, totalAvailableInv - leadTimeDemand);
-
                 let targetWindowDemand = 0;
                 for (let d = totalLeadTimeDays; d < totalDaysToTarget; d++) {
-                    let m = Math.floor(d / 30);
-                    let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
+                    let m = Math.floor(d / 30); let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
                     targetWindowDemand += (dsr > 0 ? dsr : 0);
                 }
-
                 reorderQty = Math.ceil(Math.max(0, targetWindowDemand - leftoverInvOnArrival));
-                
                 if (reorderQty > 0) {
                     if (reorderQty < moq) reorderQty = moq;
                     reorderQty = Math.ceil(reorderQty / casePack) * casePack;
@@ -986,41 +1256,22 @@
             }
             card.dataset.reorder = reorderQty; 
 
-            // --- 3. CALCULATE OPTIMAL SPLIT ---
             let simInvSplit = fba + tpl + oth;
-            let air_qty = 0;
-            let fast_qty = 0;
-            let slow_qty = 0;
-
-            transits.forEach(t => {
-                if (t.days !== null && t.days < 0 && t.qty > 0) {
-                    simInvSplit += t.qty;
-                }
-            });
+            let air_qty = 0, fast_qty = 0, slow_qty = 0;
+            transits.forEach(t => { if (t.days !== null && t.days < 0 && t.qty > 0) simInvSplit += t.qty; });
 
             for (let day = 0; day < totalDaysToTarget; day++) {
-                arrivals.forEach(a => {
-                    if (a.day === day) simInvSplit += a.qty;
-                });
-
-                let monthIdx = Math.floor(day / 30);
-                let dsr = monthIdx < 12 ? dsrValues[monthIdx] : dsrValues[11];
+                arrivals.forEach(a => { if (a.day === day) simInvSplit += a.qty; });
+                let monthIdx = Math.floor(day / 30); let dsr = monthIdx < 12 ? dsrValues[monthIdx] : dsrValues[11];
                 if (dsr <= 0) dsr = 0.001;
 
                 if (simInvSplit < dsr) {
                     let deficit = dsr - simInvSplit;
-                    
-                    if (day >= lt_slow) {
-                        slow_qty += deficit;
-                    } else if (allowFastSea && day >= lt_fast) {
-                        fast_qty += deficit;
-                    } else if (day >= lt_air) {
-                        air_qty += deficit;
-                    }
+                    if (day >= lt_slow) slow_qty += deficit;
+                    else if (allowFastSea && day >= lt_fast) fast_qty += deficit;
+                    else if (day >= lt_air) air_qty += deficit;
                     simInvSplit = 0; 
-                } else {
-                    simInvSplit -= dsr;
-                }
+                } else { simInvSplit -= dsr; }
             }
             
             if (air_qty > 0) air_qty = Math.ceil(air_qty / casePack) * casePack;
@@ -1030,14 +1281,11 @@
             let totalSplit = air_qty + fast_qty + slow_qty;
             if (totalSplit > 0 && totalSplit < moq) {
                 let shortfall = moq - totalSplit;
-                let shortfallCases = Math.ceil(shortfall / casePack) * casePack;
-                slow_qty += shortfallCases; 
+                slow_qty += Math.ceil(shortfall / casePack) * casePack; 
             }
 
-            // Update Card Details
             card.querySelector('.oos-result').innerHTML = oosText;
             card.querySelector('.req-result').innerText = reorderQty.toLocaleString();
-            
             card.querySelector('.split-result').innerHTML = `
                 <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">AIR<br><b style="font-size: 1.1rem; color: var(--text-main);">${air_qty.toLocaleString()}</b></div>
                 ${allowFastSea ? `<div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">FST<br><b style="font-size: 1.1rem; color: var(--text-main);">${fast_qty.toLocaleString()}</b></div>` : ''}
@@ -1047,7 +1295,6 @@
             const dashFastSeaOption = allowFastSea ? `<option value="FAST_SEA" ${shipMethod==='FAST_SEA'?'selected':''}>FAST SEA</option>` : '';
             const dashFastSplitText = allowFastSea ? `<div style="color: var(--text-muted); margin-bottom: 2px;">FST: <strong style="color:var(--text-main); float:right;">${fast_qty.toLocaleString()}</strong></div>` : '';
 
-            // Update Dashboard Row
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td style="font-weight: 600;">${iskuName}</td>
@@ -1058,9 +1305,7 @@
                 <td class="text-center"><input type="number" class="dash-input modern-input" value="${fba}" oninput="document.querySelector('#${cardId} .inv-fba').value = this.value" style="width: 55px;"></td>
                 <td class="text-center"><input type="number" class="dash-input modern-input" value="${tpl}" oninput="document.querySelector('#${cardId} .inv-3pl').value = this.value" style="width: 55px;"></td>
                 <td class="text-center"><input type="number" class="dash-input modern-input" value="${oth}" oninput="document.querySelector('#${cardId} .inv-oth').value = this.value" style="width: 55px;"></td>
-                
                 <td class="text-center" style="padding: 6px;">${transitDashboardHTML}</td>
-                
                 <td class="text-center"><input type="number" class="dash-input modern-input" value="${mfgLead}" oninput="document.querySelector('#${cardId} .mfg-lead').value = this.value" style="width: 45px;"></td>
                 <td class="text-center"><input type="number" class="dash-input modern-input" value="${bufferDays}" oninput="document.querySelector('#${cardId} .buffer-days').value = this.value" style="width: 45px;"></td>
                 <td class="text-center">
@@ -1070,7 +1315,6 @@
                         <option value="SLOW_SEA" ${shipMethod==='SLOW_SEA'?'selected':''}>SLOW SEA</option>
                     </select>
                 </td>
-
                 <td class="text-center" style="white-space: normal; min-width: 100px;">${dashOosHtml}</td>
                 <td class="text-right" style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">${reorderQty.toLocaleString()}</td>
                 <td class="text-left" style="font-size: 0.75rem; line-height: 1.4; background: var(--bg-color); border-radius: 6px;">
@@ -1083,22 +1327,15 @@
             `;
             dashboardBody.appendChild(row);
 
-            // ONLY draw chart if visible
             if (card.classList.contains('collapsed')) return;
 
-            // --- 4. RENDER SMART DYNAMIC CHART ---
             let chartLabels = [];
             let chartInvData = [];
             let chartForecastData = [];
             let chartColors = [];
-            
             let rollingInvChart = fba + tpl + oth;
 
-            transits.forEach(t => {
-                if (t.days !== null && t.days < 0 && t.qty > 0) {
-                    rollingInvChart += t.qty;
-                }
-            });
+            transits.forEach(t => { if (t.days !== null && t.days < 0 && t.qty > 0) rollingInvChart += t.qty; });
 
             const intervalSelect = card.querySelector('.chart-interval');
             const typeToggle = card.querySelector('.chart-type-toggle');
@@ -1108,26 +1345,15 @@
             let maxDaysChart = Math.max(interval, Math.ceil(totalDaysToTarget / interval) * interval); 
 
             for (let d = 0; d < maxDaysChart; d += interval) {
-                let chunkStart = d;
-                let chunkEnd = chunkStart + interval;
-
-                let chunkDemand = 0;
-                let chunkArrivals = 0;
-                let endDsr = 0.001; 
+                let chunkStart = d; let chunkEnd = chunkStart + interval;
+                let chunkDemand = 0; let chunkArrivals = 0; let endDsr = 0.001; 
 
                 for (let currDay = chunkStart; currDay < chunkEnd; currDay++) {
                     let mIdx = Math.floor(currDay / 30);
                     let dsr = mIdx < 12 ? dsrValues[mIdx] : dsrValues[11];
-                    if (dsr <= 0) dsr = 0.001;
-                    endDsr = dsr;
-                    
+                    if (dsr <= 0) dsr = 0.001; endDsr = dsr;
                     chunkDemand += dsr;
-
-                    transits.forEach(t => {
-                        if (t.days === currDay && t.qty > 0) {
-                            chunkArrivals += t.qty;
-                        }
-                    });
+                    transits.forEach(t => { if (t.days === currDay && t.qty > 0) chunkArrivals += t.qty; });
                 }
 
                 rollingInvChart += chunkArrivals;
@@ -1149,13 +1375,9 @@
                 let shortfall = chunkDemand - availableThisChunk;
                 let fiveDaysDemand = endDsr * 5; 
 
-                if (availableThisChunk >= chunkDemand) {
-                    chartColors.push('rgba(65, 138, 101, 0.9)'); // Logo Mint
-                } else if (shortfall <= fiveDaysDemand) {
-                    chartColors.push('rgba(209, 118, 30, 0.9)'); // Logo Orange
-                } else {
-                    chartColors.push('rgba(220, 38, 38, 0.9)'); // Red
-                }
+                if (availableThisChunk >= chunkDemand) chartColors.push('rgba(65, 138, 101, 0.9)'); 
+                else if (shortfall <= fiveDaysDemand) chartColors.push('rgba(209, 118, 30, 0.9)'); 
+                else chartColors.push('rgba(220, 38, 38, 0.9)'); 
 
                 rollingInvChart -= chunkDemand;
                 if (rollingInvChart < 0) rollingInvChart = 0; 
@@ -1163,25 +1385,13 @@
 
             const canvas = card.querySelector('.inventory-chart');
             const ctx = canvas.getContext('2d');
-            
-            if (card.chartInstance) {
-                card.chartInstance.destroy();
-            }
+            if (card.chartInstance) card.chartInstance.destroy();
 
-            const chartType = isLine ? 'line' : 'bar';
-            
-            let invDataset = {
-                label: 'Available Inventory',
-                data: chartInvData,
-            };
-            
-            let forecastDataset = {
-                label: 'Forecast (Demand)',
-                data: chartForecastData,
-            };
+            let invDataset = { label: 'Available Inventory', data: chartInvData };
+            let forecastDataset = { label: 'Forecast (Demand)', data: chartForecastData };
 
             if (isLine) {
-                invDataset.borderColor = 'rgba(27, 66, 66, 0.4)'; // Primary Dark Teal faded
+                invDataset.borderColor = 'rgba(27, 66, 66, 0.4)'; 
                 invDataset.backgroundColor = 'transparent';
                 invDataset.pointBackgroundColor = chartColors;
                 invDataset.pointBorderColor = chartColors;
@@ -1190,7 +1400,7 @@
                 invDataset.fill = false;
                 invDataset.tension = 0.1;
 
-                forecastDataset.borderColor = 'rgba(27, 66, 66, 1)'; // Primary Dark Teal Solid
+                forecastDataset.borderColor = 'rgba(27, 66, 66, 1)'; 
                 forecastDataset.backgroundColor = 'transparent';
                 forecastDataset.borderDash = [5, 5]; 
                 forecastDataset.pointRadius = 0;
@@ -1204,7 +1414,7 @@
                 invDataset.barPercentage = 0.5;
                 invDataset.categoryPercentage = 0.8;
 
-                forecastDataset.backgroundColor = 'rgba(232, 239, 239, 0.8)'; // Soft Teal Base
+                forecastDataset.backgroundColor = 'rgba(232, 239, 239, 0.8)'; 
                 forecastDataset.borderColor = 'rgba(27, 66, 66, 0.3)';
                 forecastDataset.borderWidth = 1;
                 forecastDataset.grouped = false;
@@ -1213,35 +1423,19 @@
             }
 
             card.chartInstance = new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: chartLabels,
-                    datasets: [forecastDataset, invDataset]
-                },
+                type: isLine ? 'line' : 'bar',
+                data: { labels: chartLabels, datasets: [forecastDataset, invDataset] },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
-                            display: true,
-                            position: 'bottom',
-                            labels: { 
-                                boxWidth: 12,
-                                font: { family: "'Inter', sans-serif" }
-                            }
-                        },
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { family: "'Inter', sans-serif" } } },
                         tooltip: {
-                            backgroundColor: 'rgba(15, 28, 28, 0.95)',
-                            titleFont: { family: "'Inter', sans-serif", size: 13 },
-                            bodyFont: { family: "'Inter', sans-serif", size: 12 },
-                            padding: 10,
+                            backgroundColor: 'rgba(15, 28, 28, 0.95)', titleFont: { family: "'Inter', sans-serif", size: 13 }, bodyFont: { family: "'Inter', sans-serif", size: 12 }, padding: 10,
                             callbacks: {
                                 label: function(context) {
-                                    if (context.datasetIndex === 0) { 
-                                        return `Forecast Demand: ${context.raw.toLocaleString()} Units`;
-                                    } else {
-                                        let inv = context.raw;
-                                        let forecast = chartForecastData[context.dataIndex];
+                                    if (context.datasetIndex === 0) return `Forecast Demand: ${context.raw.toLocaleString()} Units`;
+                                    else {
+                                        let inv = context.raw; let forecast = chartForecastData[context.dataIndex];
                                         let stat = inv >= forecast ? 'Covered' : 'Shortfall';
                                         return `Proj. Inv: ${inv.toLocaleString()} Units (${stat})`;
                                     }
@@ -1250,16 +1444,8 @@
                         }
                     },
                     scales: {
-                        x: {
-                            ticks: { font: { family: "'Inter', sans-serif" } },
-                            grid: { display: false }
-                        },
-                        y: {
-                            title: { display: true, text: 'Units', font: { family: "'Inter', sans-serif" } },
-                            ticks: { font: { family: "'Inter', sans-serif" } },
-                            beginAtZero: true,
-                            grid: { color: 'rgba(209, 218, 218, 0.4)' }
-                        }
+                        x: { ticks: { font: { family: "'Inter', sans-serif" } }, grid: { display: false } },
+                        y: { title: { display: true, text: 'Units', font: { family: "'Inter', sans-serif" } }, ticks: { font: { family: "'Inter', sans-serif" } }, beginAtZero: true, grid: { color: 'rgba(209, 218, 218, 0.4)' } }
                     }
                 }
             });
