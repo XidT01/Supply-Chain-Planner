@@ -1,2 +1,1261 @@
-# Supply-Chain-Planner
-for order planning based from provided forecast in a monthly basis
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Reorder Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* GRAVITIQ Brand Color Palette */
+            --primary: #1B4242;       /* Dark Teal/Slate */
+            --primary-hover: #112A2A; /* Darker Teal */
+            --primary-light: #E8EFEF; /* Very Light Teal */
+            --bg-color: #F4F7F7;      /* Cool off-white background */
+            --surface: #ffffff;
+            --border: #D1DADA;        /* Soft Teal-grey border */
+            --text-main: #0F1C1C;     /* Deepest teal, almost black */
+            --text-muted: #5A6D6D;    /* Muted teal-grey */
+            
+            /* Status Colors derived from Logo */
+            --danger-bg: #fee2e2;     /* Standard UI Red for Critical */
+            --danger-text: #b91c1c;   
+            --warning-bg: #FEF4EA;    /* Gravitiq Orange Light */
+            --warning-text: #D1761E;  /* Gravitiq Orange Dark */
+            --success-bg: #EFF8F3;    /* Gravitiq Mint Light */
+            --success-text: #418A65;  /* Gravitiq Mint Dark */
+            
+            --logo-mint: rgba(101, 184, 145, 0.9);
+            --logo-orange: rgba(243, 146, 55, 0.9);
+            
+            --shadow-sm: 0 1px 2px 0 rgb(27 66 66 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(27 66 66 / 0.1), 0 2px 4px -2px rgb(27 66 66 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(27 66 66 / 0.1), 0 4px 6px -4px rgb(27 66 66 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4 { margin-top: 0; font-weight: 600; letter-spacing: -0.02em; }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Modern Panels */
+        .panel {
+            background: var(--surface);
+            padding: 24px 32px;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .header-title {
+            font-size: 1.75rem; 
+            color: var(--text-main);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        /* Modern Inputs */
+        .modern-input {
+            background-color: #fbfcfc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .modern-input:focus {
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27, 66, 66, 0.15);
+            outline: none;
+        }
+
+        input[type="file"] { padding: 6px 12px; }
+
+        /* Modern Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(27, 66, 66, 0.2);
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(27, 66, 66, 0.3);
+        }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-secondary:hover {
+            background: var(--primary-light);
+            border-color: #A3B5B5;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+        }
+        .btn-danger:hover { background: #fecaca; transform: translateY(-1px); }
+
+        /* Dashboard Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem; 
+            white-space: nowrap;
+            background: var(--surface);
+        }
+
+        th, td {
+            padding: 12px 16px; 
+            text-align: left;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg-color);
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.7rem;
+        }
+        
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background-color: #FAFCFC; }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .dash-input {
+            padding: 4px 8px;
+            height: 28px; 
+        }
+
+        /* HIDE UP/DOWN ARROWS */
+        .dash-input[type="number"]::-webkit-inner-spin-button,
+        .dash-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .dash-input[type="number"] { -moz-appearance: textfield; text-align: center; font-weight: 500;}
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.02em;
+        }
+        .badge-success { background: var(--success-bg); color: var(--success-text); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger-text); }
+
+        /* iSKU Cards */
+        .isku-list { display: flex; flex-direction: column; gap: 20px; }
+
+        .isku-card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .isku-card-header {
+            background-color: var(--bg-color);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .isku-card-body {
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .isku-card.collapsed .isku-card-body { display: none; }
+
+        @media(min-width: 1024px) {
+            .isku-card-body { grid-template-columns: 2fr 1fr; }
+        }
+
+        .section-box {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-box h4 {
+            font-size: 0.95rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            gap: 16px;
+        }
+
+        .results-box {
+            background-color: #FAFCFC;
+            border-color: var(--border);
+        }
+
+        .result-stat {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .chart-container {
+            grid-column: 1 / -1; 
+            height: 340px; 
+            position: relative;
+            background: white;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .transit-badge {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 90px;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Custom Scrollbar for Transit block */
+        .transit-scroll::-webkit-scrollbar { height: 6px; }
+        .transit-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="panel">
+        <div class="header-title">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Supply Chain Reorder Planner
+        </div>
+        
+        <div class="controls-grid">
+            <div class="control-group">
+                <label>1. Forecast & Data Template</label>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-secondary" onclick="downloadTemplate()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        CSV Template
+                    </button>
+                    <input type="file" id="csvUpload" accept=".csv" onchange="handleFileUpload(event)" class="modern-input" style="flex-grow: 1; padding: 6px;">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="targetDateInput">2. Target Supply Date</label>
+                <input type="date" id="targetDateInput" class="modern-input">
+            </div>
+            
+            <div class="control-group" style="justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="calculateReorder()" style="height: 38px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    Calculate & Update
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" style="padding: 0; overflow: hidden;">
+        
+        <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-color);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h2 style="margin-bottom: 6px;">Main Dashboard</h2>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Review and edit live data. Don't forget to recalculate after edits.</p>
+                </div>
+                
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <div class="control-group">
+                        <label style="font-size: 0.75rem;">Sort Items</label>
+                        <select id="sortBy" onchange="applySortAndFilter()" class="modern-input" style="padding: 6px 12px; height: 32px;">
+                            <option value="default">Default</option>
+                            <option value="isku_asc">iSKU ID (A-Z)</option>
+                            <option value="reorder_desc">Total Reorder (High to Low)</option>
+                            <option value="inv_asc">Total Inventory (Low to High)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.75rem;">Filter Market</label>
+                        <select id="filterMarket" onchange="applySortAndFilter()" class="modern-input" style="padding: 6px 12px; height: 32px;">
+                            <option value="all">All Markets</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label style="font-size: 0.75rem;">Filter Category</label>
+                        <select id="filterCategory" onchange="applySortAndFilter()" class="modern-input" style="padding: 6px 12px; height: 32px;">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container" style="border: none; border-radius: 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>iSKU ID</th>
+                        <th>Market</th>
+                        <th class="text-center">ASIN</th>
+                        <th class="text-center" title="Minimum Order Qty">MOQ</th>
+                        <th class="text-center" title="Case Pack">Case</th>
+                        <th class="text-center">FBA Qty</th>
+                        <th class="text-center">3PL</th>
+                        <th class="text-center">Other</th>
+                        <th class="text-center">In Transit (Qty / ETA)</th>
+                        <th class="text-center" title="Manufacturing Lead">Mfg(d)</th>
+                        <th class="text-center" title="Buffer Days">Buf(d)</th>
+                        <th class="text-center">Method</th>
+                        <th class="text-center">Stock Status</th>
+                        <th class="text-right" style="color: var(--primary);">Reorder</th>
+                        <th class="text-left">Optimal Split</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardBody">
+                    <tr>
+                        <td colspan="15" class="text-center" style="padding: 40px; color: var(--text-muted);">Add iSKUs to view dashboard summary.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 10px;">
+        <h2 style="margin: 0; color: var(--text-main);">iSKU Data Entry Details</h2>
+        <button class="btn btn-secondary" onclick="addRow()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add Blank iSKU
+        </button>
+    </div>
+
+    <div id="iskuContainer" class="isku-list" style="margin-bottom: 60px;">
+        </div>
+</div>
+
+<script>
+    const SHIPPING_TIMES = {
+        'AIR': 15,
+        'FAST_SEA': 25,
+        'SLOW_SEA': 50
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const defaultDate = new Date();
+        defaultDate.setMonth(defaultDate.getMonth() + 6);
+        document.getElementById('targetDateInput').value = defaultDate.toISOString().split('T')[0];
+        
+        addRow(); 
+        calculateReorder(); 
+    });
+
+    function downloadTemplate() {
+        const headers = [
+            "iSKU", "Market_Place", "ASIN", "SC_Category", "MOQ", "Case_Pack_Qty",
+            "Month_1_DSR", "Month_2_DSR", "Month_3_DSR", "Month_4_DSR", "Month_5_DSR", "Month_6_DSR", 
+            "Month_7_DSR", "Month_8_DSR", "Month_9_DSR", "Month_10_DSR", "Month_11_DSR", "Month_12_DSR",
+            "Amazon_FBA_Qty", "3PL_Inv", "Other_Inv", 
+            "Transit1_Qty", "Transit1_ETA", "Transit2_Qty", "Transit2_ETA", "Transit3_Qty", "Transit3_ETA",
+            "Mfg_Lead_Time", "Buffer_Days"
+        ];
+        
+        const sampleData = [
+            "SAMPLE-001", "Amazon US", "B01ABCD123", "Core Category", "500", "150",
+            "15.5", "16.0", "16.5", "17.0", "18.0", "18.5", 
+            "19.0", "20.0", "21.0", "22.5", "25.0", "20.0",
+            "500", "1000", "0", 
+            "200", "2026-05-15", "0", "", "0", "",
+            "30", "5"
+        ];
+
+        const csvContent = headers.join(",") + "\n" + sampleData.join(",");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "iSKU_Forecast_Template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            processCSVData(text);
+            calculateReorder(); 
+        };
+        reader.readAsText(file);
+    }
+
+    function processCSVData(csvText) {
+        const lines = csvText.split('\n').filter(line => line.trim() !== '');
+        const container = document.getElementById('iskuContainer');
+        container.innerHTML = ''; 
+
+        for(let i = 1; i < lines.length; i++) {
+            const cols = lines[i].split(',');
+            if (cols.length < 29) continue; 
+            addRow(cols);
+        }
+    }
+
+    function toggleCard(btn) {
+        const card = btn.closest('.isku-card');
+        card.classList.toggle('collapsed');
+        if (card.classList.contains('collapsed')) {
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="6 9 12 15 18 9"></polyline></svg> Expand Details`;
+        } else {
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="18 15 12 9 6 15"></polyline></svg> Hide Details`;
+            setTimeout(() => { calculateReorder(); }, 50);
+        }
+    }
+
+    function addRow(data = null) {
+        const container = document.getElementById('iskuContainer');
+        const card = document.createElement('div');
+        card.className = 'isku-card collapsed'; 
+        
+        const uniqueId = 'card-' + Math.random().toString(36).substr(2, 9);
+        card.id = uniqueId;
+        
+        const v = data || [
+            "", "", "", "", "0", "1", 
+            "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+            "0", "0", "0", 
+            "0", "", "0", "", "0", "", 
+            "30", "5" 
+        ];
+
+        let forecastInputsHTML = '';
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const today = new Date();
+        
+        for(let i = 0; i < 12; i++) {
+            let d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+            let monthStr = monthNames[d.getMonth()] + " " + d.getFullYear();
+            forecastInputsHTML += `
+                <div class="input-group">
+                    <label class="month-label">${monthStr}</label>
+                    <input type="number" class="modern-input dsr-input" value="${v[i+6]}" step="0.1" min="0">
+                </div>
+            `;
+        }
+
+        const allowFastSea = /\b(US|USA|CA|CANADA|JP|JAPAN)\b/i.test(v[1]);
+        const fastSeaOptCard = allowFastSea ? `<option value="FAST_SEA">FAST SEA (20-25 days)</option>` : '';
+
+        card.innerHTML = `
+            <div class="isku-card-header">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; flex-grow: 1;">
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0; min-width: 60px;">iSKU ID:</label>
+                        <input type="text" class="modern-input isku-input" placeholder="Enter iSKU..." value="${v[0]}" style="width: 160px; font-weight: 600;">
+                    </div>
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0;">Market:</label>
+                        <input type="text" class="modern-input marketplace-input" placeholder="e.g. Amazon US" value="${v[1]}" style="width: 120px;">
+                    </div>
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0;">ASIN:</label>
+                        <input type="text" class="modern-input asin-input" placeholder="ASIN" value="${v[2]}" style="width: 110px;">
+                    </div>
+                    <div class="input-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <label style="margin:0;">Category:</label>
+                        <input type="text" class="modern-input sccategory-input" placeholder="e.g. Fast Mover" value="${v[3]}" style="width: 120px;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="toggleCard(this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="6 9 12 15 18 9"></polyline></svg> Expand Details
+                    </button>
+                    <button class="btn btn-danger" style="padding: 8px 12px;" onclick="this.closest('.isku-card').remove(); calculateReorder();" title="Remove iSKU">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="isku-card-body">
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="section-box">
+                        <h4>Forecast (Daily Sales Rate over 12 Months)</h4>
+                        <div class="grid-inputs">
+                            ${forecastInputsHTML}
+                        </div>
+                    </div>
+
+                    <div class="section-box">
+                        <h4>Inventory & In Transit</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div class="grid-inputs" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                                <div class="input-group"><label>Amazon FBA qty</label><input type="number" class="modern-input inv-fba" value="${v[18]}" min="0"></div>
+                                <div class="input-group"><label>3PL Qty</label><input type="number" class="modern-input inv-3pl" value="${v[19]}" min="0"></div>
+                                <div class="input-group"><label>Other Whse</label><input type="number" class="modern-input inv-oth" value="${v[20]}" min="0"></div>
+                            </div>
+                            
+                            <div class="transit-container">
+                                <div class="grid-inputs" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                                    <div class="input-group"><label>Transit 1 Qty</label><input type="number" class="modern-input t-qty" value="${v[21]}" min="0"></div>
+                                    <div class="input-group"><label>Transit 1 ETA</label><input type="date" class="modern-input t-eta" value="${v[22]}"></div>
+                                    <div class="input-group"><label>Transit 2 Qty</label><input type="number" class="modern-input t-qty" value="${v[23]}" min="0"></div>
+                                    <div class="input-group"><label>Transit 2 ETA</label><input type="date" class="modern-input t-eta" value="${v[24]}"></div>
+                                    <div class="input-group"><label>Transit 3 Qty</label><input type="number" class="modern-input t-qty" value="${v[25]}" min="0"></div>
+                                    <div class="input-group"><label>Transit 3 ETA</label><input type="date" class="modern-input t-eta" value="${v[26]}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="section-box">
+                        <h4>Logistics & Ordering Settings</h4>
+                        <div class="grid-inputs" style="grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                            <div class="input-group"><label>Mfg Lead Time (Days)</label><input type="number" class="modern-input mfg-lead" value="${v[27]}" min="0"></div>
+                            <div class="input-group"><label>Buffer Days</label><input type="number" class="modern-input buffer-days" value="${v[28]}" min="0"></div>
+                            <div class="input-group"><label>Min Order Qty (MOQ)</label><input type="number" class="modern-input moq-input" value="${v[4]}" min="0"></div>
+                            <div class="input-group"><label>Case Pack Qty</label><input type="number" class="modern-input case-pack-input" value="${v[5]}" min="1"></div>
+                            <div class="input-group" style="grid-column: span 2;">
+                                <label>Shipping Method (Used for Total Calc)</label>
+                                <select class="modern-input shipping-method" style="max-width: 100%;">
+                                    <option value="AIR">AIR (10-15 days)</option>
+                                    ${fastSeaOptCard}
+                                    <option value="SLOW_SEA">SLOW SEA (40-50 days)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-box results-box">
+                        <h4 style="border-bottom-color: var(--border);">Live Reorder Calculations</h4>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: white; border-radius: 8px; border: 1px solid var(--border);">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Stock Status</span>
+                                <span class="oos-result" style="text-align: right;">-</span>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--primary); box-shadow: 0 0 0 1px var(--primary);">
+                                <span style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">Total Reorder Qty</span>
+                                <span class="req-result" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">0</span>
+                            </div>
+
+                            <div style="padding: 16px; background: white; border-radius: 8px; border: 1px solid var(--border);">
+                                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); display: block; margin-bottom: 8px;">Optimal Split Allocation</span>
+                                <div class="split-result" style="display: flex; gap: 8px; font-size: 0.85rem;">
+                                    <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">AIR<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>
+                                    ${allowFastSea ? '<div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">FST<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>' : ''}
+                                    <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">SLW<br><b style="font-size: 1.1rem; color: var(--text-main);">0</b></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <h4 style="margin:0;">Inventory Projection</h4>
+                            <div style="display:flex; gap:12px; font-size: 0.75rem;">
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--success-bg); border: 1px solid var(--success-text);"></span> Met</span>
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--warning-bg); border: 1px solid var(--warning-text);"></span> Short &le; 5d</span>
+                                <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; border-radius:2px; background:var(--danger-bg); border: 1px solid var(--danger-text);"></span> Short &gt; 5d</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; align-items: center; background: var(--bg-color); padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label style="margin:0; font-size: 0.75rem; color: var(--text-muted);">View:</label>
+                                <select class="chart-interval modern-input" onchange="calculateReorder()" style="width: auto; height: 26px; padding: 0 8px; font-size: 0.75rem; cursor: pointer;">
+                                    <option value="7">Weekly</option>
+                                    <option value="30" selected>Monthly</option>
+                                    <option value="90">Quarterly</option>
+                                </select>
+                            </div>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500; margin:0;">
+                                <input type="checkbox" class="chart-type-toggle" onchange="calculateReorder()" style="margin:0; cursor: pointer; width: 14px; height: 14px;"> Line Graph
+                            </label>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas class="inventory-chart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        `;
+        container.appendChild(card);
+        
+        if(container.children.length === 1 && !data) {
+            card.classList.remove('collapsed');
+            card.querySelector('.btn-secondary').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="18 15 12 9 6 15"></polyline></svg> Hide Details`;
+        }
+    }
+
+    function formatMMDD(dateObj) {
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        return `${mm}/${dd}`;
+    }
+
+    function getDaysFromToday(dateString, todayDate) {
+        if(!dateString) return null;
+        let d = new Date(dateString);
+        return Math.ceil((d - todayDate) / (1000 * 60 * 60 * 24));
+    }
+
+    function updateFilterDropdowns(cards) {
+        const marketSelect = document.getElementById('filterMarket');
+        const catSelect = document.getElementById('filterCategory');
+        
+        let currentMarket = marketSelect.value;
+        let currentCat = catSelect.value;
+        
+        let markets = new Set();
+        let cats = new Set();
+        
+        cards.forEach(card => {
+            let m = card.querySelector('.marketplace-input').value.trim();
+            let c = card.querySelector('.sccategory-input').value.trim();
+            if (m) markets.add(m);
+            if (c) cats.add(c);
+        });
+        
+        marketSelect.innerHTML = '<option value="all">All Market Places</option>';
+        [...markets].sort().forEach(m => marketSelect.innerHTML += `<option value="${m}">${m}</option>`);
+        marketSelect.value = markets.has(currentMarket) ? currentMarket : 'all';
+        
+        catSelect.innerHTML = '<option value="all">All Categories</option>';
+        [...cats].sort().forEach(c => catSelect.innerHTML += `<option value="${c}">${c}</option>`);
+        catSelect.value = cats.has(currentCat) ? currentCat : 'all';
+    }
+
+    function applySortAndFilter() {
+        const container = document.getElementById('iskuContainer');
+        let cards = Array.from(container.querySelectorAll('.isku-card'));
+        const sortVal = document.getElementById('sortBy').value;
+
+        cards.sort((a, b) => {
+            if (sortVal === 'isku_asc') {
+                return (a.dataset.isku || '').localeCompare(b.dataset.isku || '');
+            } else if (sortVal === 'reorder_desc') {
+                return (parseFloat(b.dataset.reorder) || 0) - (parseFloat(a.dataset.reorder) || 0);
+            } else if (sortVal === 'inv_asc') {
+                return (parseFloat(a.dataset.inv) || 0) - (parseFloat(b.dataset.inv) || 0);
+            }
+            return 0; 
+        });
+
+        cards.forEach(card => container.appendChild(card));
+        calculateReorder();
+    }
+
+    function calculateReorder() {
+        const cards = document.querySelectorAll('.isku-card');
+        const dashboardBody = document.getElementById('dashboardBody');
+        const targetDateInput = document.getElementById('targetDateInput').value;
+        const targetDate = new Date(targetDateInput);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        dashboardBody.innerHTML = '';
+
+        if(cards.length === 0) {
+            dashboardBody.innerHTML = '<tr><td colspan="15" class="text-center" style="padding: 40px; color: var(--text-muted);">No iSKUs added yet.</td></tr>';
+            return;
+        }
+
+        updateFilterDropdowns(cards);
+
+        const filterMarket = document.getElementById('filterMarket').value;
+        const filterCat = document.getElementById('filterCategory').value;
+
+        const diffTime = targetDate - today;
+        let totalDaysToTarget = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (totalDaysToTarget < 0) totalDaysToTarget = 0;
+
+        let maxMonths = Math.max(1, Math.ceil(totalDaysToTarget / 30));
+        if (maxMonths > 12) maxMonths = 12;
+
+        cards.forEach(card => {
+            const cardId = card.id;
+            const iskuName = card.querySelector('.isku-input').value || 'Unnamed iSKU';
+            const marketplace = card.querySelector('.marketplace-input').value || '-';
+            const asin = card.querySelector('.asin-input').value || '-';
+            const scCategory = card.querySelector('.sccategory-input').value || '-';
+
+            card.dataset.isku = iskuName.toLowerCase();
+
+            let isVisible = true;
+            if (filterMarket !== 'all' && marketplace !== filterMarket) isVisible = false;
+            if (filterCat !== 'all' && scCategory !== filterCat) isVisible = false;
+
+            if (!isVisible) {
+                card.style.display = 'none';
+                return; 
+            } else {
+                card.style.display = 'block';
+            }
+
+            const allowFastSea = /\b(US|USA|CA|CANADA|JP|JAPAN)\b/i.test(marketplace);
+
+            let cardSelect = card.querySelector('.shipping-method');
+            let currentSelection = cardSelect.value;
+            
+            cardSelect.innerHTML = `<option value="AIR">AIR (10-15 days)</option>` + 
+                                   (allowFastSea ? `<option value="FAST_SEA">FAST SEA (20-25 days)</option>` : ``) + 
+                                   `<option value="SLOW_SEA">SLOW SEA (40-50 days)</option>`;
+            
+            if (!allowFastSea && currentSelection === 'FAST_SEA') {
+                currentSelection = 'AIR';
+            }
+            cardSelect.value = currentSelection;
+            const shipMethod = cardSelect.value;
+
+            const dsrInputs = card.querySelectorAll('.dsr-input');
+            const dsrValues = Array.from(dsrInputs).map(input => parseFloat(input.value) || 0);
+            const monthLabels = Array.from(card.querySelectorAll('.month-label')).map(lbl => lbl.innerText);
+
+            const fba = parseInt(card.querySelector('.inv-fba').value) || 0;
+            const tpl = parseInt(card.querySelector('.inv-3pl').value) || 0;
+            const oth = parseInt(card.querySelector('.inv-oth').value) || 0;
+            
+            let moq = parseInt(card.querySelector('.moq-input').value) || 0;
+            let casePack = parseInt(card.querySelector('.case-pack-input').value) || 1;
+            if (casePack < 1) casePack = 1; 
+
+            let transits = [];
+            let totalTransitQty = 0;
+            const tQtyInputs = card.querySelectorAll('.t-qty');
+            const tEtaInputs = card.querySelectorAll('.t-eta');
+            
+            let transitDashboardHTML = '<div class="transit-scroll" style="display: flex; flex-direction: row; gap: 8px; justify-content: center;">';
+            for(let i=0; i < tQtyInputs.length; i++) {
+                let qty = parseInt(tQtyInputs[i].value) || 0;
+                let eta = tEtaInputs[i].value;
+                
+                if (qty > 0 || eta) {
+                    transits.push({ qty: qty, days: getDaysFromToday(eta, today) });
+                    totalTransitQty += qty;
+                }
+
+                transitDashboardHTML += `
+                    <div class="transit-badge">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span style="font-size: 0.65rem; font-weight: bold; color: var(--text-muted);">T${i+1}</span>
+                            <input type="number" class="dash-input modern-input" value="${qty}" oninput="document.querySelectorAll('#${cardId} .t-qty')[${i}].value = this.value" style="width: 50px; padding: 2px; height: 24px;">
+                        </div>
+                        <input type="date" class="dash-input modern-input" value="${eta}" oninput="document.querySelectorAll('#${cardId} .t-eta')[${i}].value = this.value" style="width: 100%; padding: 2px 4px; height: 24px; font-size: 0.7rem;">
+                    </div>
+                `;
+            }
+            transitDashboardHTML += '</div>';
+
+            const totalAvailableInv = fba + tpl + oth + totalTransitQty;
+            card.dataset.inv = totalAvailableInv; 
+
+            const mfgLead = parseInt(card.querySelector('.mfg-lead').value) || 0;
+            const bufferDays = parseInt(card.querySelector('.buffer-days').value) || 0;
+            const shippingDays = SHIPPING_TIMES[shipMethod];
+            
+            const totalLeadTimeDays = mfgLead + shippingDays + bufferDays;
+            
+            const lt_air = mfgLead + SHIPPING_TIMES['AIR'] + bufferDays;
+            const lt_fast = mfgLead + SHIPPING_TIMES['FAST_SEA'] + bufferDays;
+            const lt_slow = mfgLead + SHIPPING_TIMES['SLOW_SEA'] + bufferDays;
+
+            // --- 1. DAY-BY-DAY SIMULATION FOR OOS SPANS ---
+            let simInv = fba + tpl + oth;
+            let oosSpans = [];
+            let isOOS = false;
+            let currentSpanStart = 0;
+            let totalOOSDays = 0;
+
+            let arrivals = [];
+            transits.forEach(t => {
+                if (t.days !== null && t.days >= 0 && t.qty > 0) {
+                    arrivals.push({day: t.days, qty: t.qty});
+                } else if (t.days !== null && t.days < 0 && t.qty > 0) {
+                    simInv += t.qty;
+                }
+            });
+
+            for (let day = 0; day < totalLeadTimeDays; day++) { 
+                arrivals.forEach(a => {
+                    if (a.day === day) simInv += a.qty;
+                });
+
+                let monthIdx = Math.floor(day / 30);
+                let dsr = monthIdx < 12 ? dsrValues[monthIdx] : dsrValues[11];
+                if (dsr <= 0) dsr = 0.001; 
+
+                if (simInv < dsr) {
+                    totalOOSDays++;
+                    simInv = 0; 
+                    if (!isOOS) {
+                        isOOS = true;
+                        currentSpanStart = day;
+                    }
+                } else {
+                    simInv -= dsr;
+                    if (isOOS) {
+                        isOOS = false;
+                        oosSpans.push({ start: currentSpanStart, end: day - 1 });
+                    }
+                }
+            }
+
+            if (isOOS) {
+                oosSpans.push({ start: currentSpanStart, end: totalLeadTimeDays - 1 });
+            }
+
+            let oosText = `<div class="badge badge-success">Fully Covered</div>`;
+            let dashOosHtml = `<span class="badge badge-success">Covered</span>`;
+
+            if (totalOOSDays > 0) {
+                let spanStrings = oosSpans.map(span => {
+                    let sDate = new Date(today.getTime()); sDate.setDate(sDate.getDate() + span.start);
+                    let eDate = new Date(today.getTime()); eDate.setDate(eDate.getDate() + span.end);
+                    return `${formatMMDD(sDate)} - ${formatMMDD(eDate)}`;
+                });
+                
+                oosText = `
+                    <div style="text-align: right;">
+                        <span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days OOS</span>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">${spanStrings.join('<br>')}</div>
+                    </div>
+                `;
+                dashOosHtml = `
+                    <div style="text-align: center;">
+                        <span class="badge badge-danger" style="margin-bottom: 4px;">${totalOOSDays} Days</span>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">${spanStrings.join('<br>')}</div>
+                    </div>
+                `;
+            }
+
+            // --- 2. CALCULATE SINGLE REORDER QUANTITY ---
+            let reorderQty = 0;
+            if (totalLeadTimeDays < totalDaysToTarget) {
+                let leadTimeDemand = 0;
+                for (let d = 0; d < totalLeadTimeDays; d++) {
+                    let m = Math.floor(d / 30);
+                    let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
+                    leadTimeDemand += (dsr > 0 ? dsr : 0);
+                }
+
+                let leftoverInvOnArrival = Math.max(0, totalAvailableInv - leadTimeDemand);
+
+                let targetWindowDemand = 0;
+                for (let d = totalLeadTimeDays; d < totalDaysToTarget; d++) {
+                    let m = Math.floor(d / 30);
+                    let dsr = m < 12 ? dsrValues[m] : dsrValues[11];
+                    targetWindowDemand += (dsr > 0 ? dsr : 0);
+                }
+
+                reorderQty = Math.ceil(Math.max(0, targetWindowDemand - leftoverInvOnArrival));
+                
+                if (reorderQty > 0) {
+                    if (reorderQty < moq) reorderQty = moq;
+                    reorderQty = Math.ceil(reorderQty / casePack) * casePack;
+                }
+            }
+            card.dataset.reorder = reorderQty; 
+
+            // --- 3. CALCULATE OPTIMAL SPLIT ---
+            let simInvSplit = fba + tpl + oth;
+            let air_qty = 0;
+            let fast_qty = 0;
+            let slow_qty = 0;
+
+            transits.forEach(t => {
+                if (t.days !== null && t.days < 0 && t.qty > 0) {
+                    simInvSplit += t.qty;
+                }
+            });
+
+            for (let day = 0; day < totalDaysToTarget; day++) {
+                arrivals.forEach(a => {
+                    if (a.day === day) simInvSplit += a.qty;
+                });
+
+                let monthIdx = Math.floor(day / 30);
+                let dsr = monthIdx < 12 ? dsrValues[monthIdx] : dsrValues[11];
+                if (dsr <= 0) dsr = 0.001;
+
+                if (simInvSplit < dsr) {
+                    let deficit = dsr - simInvSplit;
+                    
+                    if (day >= lt_slow) {
+                        slow_qty += deficit;
+                    } else if (allowFastSea && day >= lt_fast) {
+                        fast_qty += deficit;
+                    } else if (day >= lt_air) {
+                        air_qty += deficit;
+                    }
+                    simInvSplit = 0; 
+                } else {
+                    simInvSplit -= dsr;
+                }
+            }
+            
+            if (air_qty > 0) air_qty = Math.ceil(air_qty / casePack) * casePack;
+            if (fast_qty > 0) fast_qty = Math.ceil(fast_qty / casePack) * casePack;
+            if (slow_qty > 0) slow_qty = Math.ceil(slow_qty / casePack) * casePack;
+            
+            let totalSplit = air_qty + fast_qty + slow_qty;
+            if (totalSplit > 0 && totalSplit < moq) {
+                let shortfall = moq - totalSplit;
+                let shortfallCases = Math.ceil(shortfall / casePack) * casePack;
+                slow_qty += shortfallCases; 
+            }
+
+            // Update Card Details
+            card.querySelector('.oos-result').innerHTML = oosText;
+            card.querySelector('.req-result').innerText = reorderQty.toLocaleString();
+            
+            card.querySelector('.split-result').innerHTML = `
+                <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">AIR<br><b style="font-size: 1.1rem; color: var(--text-main);">${air_qty.toLocaleString()}</b></div>
+                ${allowFastSea ? `<div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">FST<br><b style="font-size: 1.1rem; color: var(--text-main);">${fast_qty.toLocaleString()}</b></div>` : ''}
+                <div style="flex:1; background:var(--bg-color); padding: 8px; border-radius: 6px; text-align: center;">SLW<br><b style="font-size: 1.1rem; color: var(--text-main);">${slow_qty.toLocaleString()}</b></div>
+            `;
+
+            const dashFastSeaOption = allowFastSea ? `<option value="FAST_SEA" ${shipMethod==='FAST_SEA'?'selected':''}>FAST SEA</option>` : '';
+            const dashFastSplitText = allowFastSea ? `<div style="color: var(--text-muted); margin-bottom: 2px;">FST: <strong style="color:var(--text-main); float:right;">${fast_qty.toLocaleString()}</strong></div>` : '';
+
+            // Update Dashboard Row
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="font-weight: 600;">${iskuName}</td>
+                <td>${marketplace}</td>
+                <td class="text-center"><input type="text" class="dash-input modern-input" value="${asin}" oninput="document.querySelector('#${cardId} .asin-input').value = this.value" style="width: 75px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${moq}" oninput="document.querySelector('#${cardId} .moq-input').value = this.value" style="width: 50px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${casePack}" oninput="document.querySelector('#${cardId} .case-pack-input').value = this.value" style="width: 45px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${fba}" oninput="document.querySelector('#${cardId} .inv-fba').value = this.value" style="width: 55px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${tpl}" oninput="document.querySelector('#${cardId} .inv-3pl').value = this.value" style="width: 55px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${oth}" oninput="document.querySelector('#${cardId} .inv-oth').value = this.value" style="width: 55px;"></td>
+                
+                <td class="text-center" style="padding: 6px;">${transitDashboardHTML}</td>
+                
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${mfgLead}" oninput="document.querySelector('#${cardId} .mfg-lead').value = this.value" style="width: 45px;"></td>
+                <td class="text-center"><input type="number" class="dash-input modern-input" value="${bufferDays}" oninput="document.querySelector('#${cardId} .buffer-days').value = this.value" style="width: 45px;"></td>
+                <td class="text-center">
+                    <select class="dash-input modern-input" onchange="document.querySelector('#${cardId} .shipping-method').value = this.value" style="width: 85px;">
+                        <option value="AIR" ${shipMethod==='AIR'?'selected':''}>AIR</option>
+                        ${dashFastSeaOption}
+                        <option value="SLOW_SEA" ${shipMethod==='SLOW_SEA'?'selected':''}>SLOW SEA</option>
+                    </select>
+                </td>
+
+                <td class="text-center" style="white-space: normal; min-width: 100px;">${dashOosHtml}</td>
+                <td class="text-right" style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">${reorderQty.toLocaleString()}</td>
+                <td class="text-left" style="font-size: 0.75rem; line-height: 1.4; background: var(--bg-color); border-radius: 6px;">
+                    <div style="padding: 4px 8px;">
+                        <div style="color: var(--text-muted); margin-bottom: 2px;">AIR: <strong style="color:var(--text-main); float:right;">${air_qty.toLocaleString()}</strong></div>
+                        ${dashFastSplitText}
+                        <div style="color: var(--text-muted);">SLW: <strong style="color:var(--text-main); float:right;">${slow_qty.toLocaleString()}</strong></div>
+                    </div>
+                </td>
+            `;
+            dashboardBody.appendChild(row);
+
+            // ONLY draw chart if visible
+            if (card.classList.contains('collapsed')) return;
+
+            // --- 4. RENDER SMART DYNAMIC CHART ---
+            let chartLabels = [];
+            let chartInvData = [];
+            let chartForecastData = [];
+            let chartColors = [];
+            
+            let rollingInvChart = fba + tpl + oth;
+
+            transits.forEach(t => {
+                if (t.days !== null && t.days < 0 && t.qty > 0) {
+                    rollingInvChart += t.qty;
+                }
+            });
+
+            const intervalSelect = card.querySelector('.chart-interval');
+            const typeToggle = card.querySelector('.chart-type-toggle');
+            const interval = intervalSelect ? parseInt(intervalSelect.value) : 30;
+            const isLine = typeToggle ? typeToggle.checked : false;
+
+            let maxDaysChart = Math.max(interval, Math.ceil(totalDaysToTarget / interval) * interval); 
+
+            for (let d = 0; d < maxDaysChart; d += interval) {
+                let chunkStart = d;
+                let chunkEnd = chunkStart + interval;
+
+                let chunkDemand = 0;
+                let chunkArrivals = 0;
+                let endDsr = 0.001; 
+
+                for (let currDay = chunkStart; currDay < chunkEnd; currDay++) {
+                    let mIdx = Math.floor(currDay / 30);
+                    let dsr = mIdx < 12 ? dsrValues[mIdx] : dsrValues[11];
+                    if (dsr <= 0) dsr = 0.001;
+                    endDsr = dsr;
+                    
+                    chunkDemand += dsr;
+
+                    transits.forEach(t => {
+                        if (t.days === currDay && t.qty > 0) {
+                            chunkArrivals += t.qty;
+                        }
+                    });
+                }
+
+                rollingInvChart += chunkArrivals;
+                let availableThisChunk = rollingInvChart;
+                
+                let dStartDate = new Date(today.getTime()); dStartDate.setDate(dStartDate.getDate() + chunkStart);
+                let dEndDate = new Date(today.getTime()); dEndDate.setDate(dEndDate.getDate() + chunkEnd - 1);
+                
+                if (interval === 30) {
+                    let mIdx = Math.floor(chunkStart / 30);
+                    chartLabels.push(mIdx < 12 ? monthLabels[mIdx] : monthLabels[11]);
+                } else {
+                    chartLabels.push(`${formatMMDD(dStartDate)} - ${formatMMDD(dEndDate)}`);
+                }
+                
+                chartForecastData.push(Math.round(chunkDemand));
+                chartInvData.push(Math.round(availableThisChunk));
+
+                let shortfall = chunkDemand - availableThisChunk;
+                let fiveDaysDemand = endDsr * 5; 
+
+                if (availableThisChunk >= chunkDemand) {
+                    chartColors.push('rgba(65, 138, 101, 0.9)'); // Logo Mint
+                } else if (shortfall <= fiveDaysDemand) {
+                    chartColors.push('rgba(209, 118, 30, 0.9)'); // Logo Orange
+                } else {
+                    chartColors.push('rgba(220, 38, 38, 0.9)'); // Red
+                }
+
+                rollingInvChart -= chunkDemand;
+                if (rollingInvChart < 0) rollingInvChart = 0; 
+            }
+
+            const canvas = card.querySelector('.inventory-chart');
+            const ctx = canvas.getContext('2d');
+            
+            if (card.chartInstance) {
+                card.chartInstance.destroy();
+            }
+
+            const chartType = isLine ? 'line' : 'bar';
+            
+            let invDataset = {
+                label: 'Available Inventory',
+                data: chartInvData,
+            };
+            
+            let forecastDataset = {
+                label: 'Forecast (Demand)',
+                data: chartForecastData,
+            };
+
+            if (isLine) {
+                invDataset.borderColor = 'rgba(27, 66, 66, 0.4)'; // Primary Dark Teal faded
+                invDataset.backgroundColor = 'transparent';
+                invDataset.pointBackgroundColor = chartColors;
+                invDataset.pointBorderColor = chartColors;
+                invDataset.pointRadius = 5;
+                invDataset.pointHoverRadius = 7;
+                invDataset.fill = false;
+                invDataset.tension = 0.1;
+
+                forecastDataset.borderColor = 'rgba(27, 66, 66, 1)'; // Primary Dark Teal Solid
+                forecastDataset.backgroundColor = 'transparent';
+                forecastDataset.borderDash = [5, 5]; 
+                forecastDataset.pointRadius = 0;
+                forecastDataset.fill = false;
+                forecastDataset.tension = 0.1;
+            } else {
+                invDataset.backgroundColor = chartColors;
+                invDataset.borderColor = chartColors.map(c => c.replace('0.9', '1'));
+                invDataset.borderWidth = 1;
+                invDataset.grouped = false;
+                invDataset.barPercentage = 0.5;
+                invDataset.categoryPercentage = 0.8;
+
+                forecastDataset.backgroundColor = 'rgba(232, 239, 239, 0.8)'; // Soft Teal Base
+                forecastDataset.borderColor = 'rgba(27, 66, 66, 0.3)';
+                forecastDataset.borderWidth = 1;
+                forecastDataset.grouped = false;
+                forecastDataset.barPercentage = 0.9;
+                forecastDataset.categoryPercentage = 0.8;
+            }
+
+            card.chartInstance = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: chartLabels,
+                    datasets: [forecastDataset, invDataset]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            display: true,
+                            position: 'bottom',
+                            labels: { 
+                                boxWidth: 12,
+                                font: { family: "'Inter', sans-serif" }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 28, 28, 0.95)',
+                            titleFont: { family: "'Inter', sans-serif", size: 13 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 12 },
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) { 
+                                        return `Forecast Demand: ${context.raw.toLocaleString()} Units`;
+                                    } else {
+                                        let inv = context.raw;
+                                        let forecast = chartForecastData[context.dataIndex];
+                                        let stat = inv >= forecast ? 'Covered' : 'Shortfall';
+                                        return `Proj. Inv: ${inv.toLocaleString()} Units (${stat})`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { font: { family: "'Inter', sans-serif" } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            title: { display: true, text: 'Units', font: { family: "'Inter', sans-serif" } },
+                            ticks: { font: { family: "'Inter', sans-serif" } },
+                            beginAtZero: true,
+                            grid: { color: 'rgba(209, 218, 218, 0.4)' }
+                        }
+                    }
+                }
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
