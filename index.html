@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XID Supply Chain OS</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -71,6 +72,7 @@
             display: flex;
             gap: 8px;
             height: 100%;
+            overflow-x: auto;
         }
 
         .nav-item {
@@ -85,6 +87,7 @@
             height: 100%;
             border-bottom: 3px solid transparent;
             box-sizing: border-box;
+            white-space: nowrap;
         }
 
         .nav-item:hover { color: white; background: rgba(255,255,255,0.05); }
@@ -164,7 +167,6 @@
         label { font-weight: 600; font-size: 0.85rem; color: var(--text-main); }
         .modern-input { background-color: #fbfcfc; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.85rem; font-family: 'Inter', sans-serif; color: var(--text-main); transition: all 0.2s ease; box-sizing: border-box; width: 100%; }
         .modern-input:focus { background-color: #ffffff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(27, 66, 66, 0.15); outline: none; }
-        input[type="file"] { padding: 6px 12px; }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; font-family: 'Inter', sans-serif; transition: all 0.2s ease; border: none; cursor: pointer; box-sizing: border-box; white-space: nowrap; }
         .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 6px -1px rgba(27, 66, 66, 0.2); }
         .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 6px 8px -1px rgba(27, 66, 66, 0.3); }
@@ -206,11 +208,14 @@
         .transit-scroll::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 10px; }
         .blank-state { text-align: center; padding: 100px 20px; color: var(--text-muted); }
         .blank-state svg { width: 64px; height: 64px; color: var(--border); margin-bottom: 16px; }
-        
-        /* Forecast Specific Inputs */
         .weight-input-group { position: relative; display: flex; align-items: center; }
         .weight-input-group input { padding-right: 24px; text-align: right; }
         .weight-input-group span { position: absolute; right: 10px; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;}
+        
+        /* New Table Specific Styling */
+        .border-right { border-right: 1px solid var(--border); }
+        .header-group { background-color: #E8EFEF; color: var(--primary); text-align: center; font-weight: 700; border-bottom: 2px solid var(--border); }
+        .sub-header { font-size: 0.65rem; color: var(--text-muted); font-weight: normal; margin-left: 2px;}
     </style>
 </head>
 <body>
@@ -224,8 +229,7 @@
             <div id="nav-home" class="nav-item active" onclick="navigateTo('home')">Home</div>
             <div id="nav-forecast" class="nav-item" onclick="navigateTo('forecast')">Forecast</div>
             <div id="nav-reorder" class="nav-item" onclick="navigateTo('reorder')">Reorder Planning</div>
-            <div id="nav-shipment" class="nav-item" onclick="navigateTo('shipment')">Shipment Planning</div>
-            <div id="nav-cost" class="nav-item" onclick="navigateTo('cost')">Cost Comparison</div>
+            <div id="nav-tiktok" class="nav-item" onclick="navigateTo('tiktok')">TikTok Inventory</div>
         </div>
     </nav>
 
@@ -254,21 +258,12 @@
                 <div class="launch-text">Open Module <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
             </div>
 
-            <div class="module-card" onclick="navigateTo('shipment')">
+            <div class="module-card" onclick="navigateTo('tiktok')">
                 <div class="module-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 </div>
-                <h3>Shipment Planning</h3>
-                <p>Track active POs, manage container loads, and monitor incoming inventory ETA dates.</p>
-                <div class="launch-text">Open Module <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
-            </div>
-
-            <div class="module-card" onclick="navigateTo('cost')">
-                <div class="module-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                </div>
-                <h3>Cost Comparison</h3>
-                <p>Compare freight forwarding rates across Air, Fast Sea, and Slow Sea to minimize logistics spend.</p>
+                <h3>TikTok Inventory Report</h3>
+                <p>Upload historical sales and TikTok fulfillment files to calculate categorized DOS based on varying DSR and FSR trends.</p>
                 <div class="launch-text">Open Module <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
             </div>
         </div>
@@ -291,12 +286,12 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 CSV Template
                             </button>
-                            <input type="file" id="csvForecastUpload" accept=".csv" onchange="handleForecastFileUpload(event)" class="modern-input" style="flex-grow: 1; padding: 6px;">
+                            <input type="file" id="csvForecastUpload" class="modern-input" style="flex-grow: 1; padding: 6px;" onchange="handleForecastFileUpload(event)">
                         </div>
                     </div>
                     <div class="control-group" style="justify-content: flex-end;">
                         <button class="btn btn-primary" onclick="calculateForecast()" style="height: 38px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 0 20.49 15"></path></svg>
                             Calculate Projections
                         </button>
                     </div>
@@ -356,7 +351,7 @@
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 CSV Template
                             </button>
-                            <input type="file" id="csvUpload" accept=".csv" onchange="handleFileUpload(event)" class="modern-input" style="flex-grow: 1; padding: 6px;">
+                            <input type="file" id="csvUpload" class="modern-input" style="flex-grow: 1; padding: 6px;" onchange="handleFileUpload(event)">
                         </div>
                     </div>
 
@@ -451,24 +446,107 @@
         </div>
     </main>
 
-    <main id="page-shipment" class="page-view">
+    <main id="page-tiktok" class="page-view">
         <div class="container">
-            <div class="panel blank-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-                <h2>Shipment Planning</h2>
-                <p>This module is under construction. It will handle PO tracking and container optimization.</p>
-                <button class="btn btn-primary" style="margin-top: 16px;" onclick="navigateTo('home')">Return Home</button>
+            <div class="panel">
+                <div class="header-title">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    TikTok Inventory Report
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: -10px; margin-bottom: 20px;">Upload historical sales, inventory, and forecast files to generate a dynamic Days of Stock (DOS) report across all inventory stages.</p>
+                
+                <div class="controls-grid" style="align-items: end;">
+                    <div class="control-group">
+                        <label>1. Historical Sales (CSV/Excel)</label>
+                        <input type="file" id="ttSalesUpload" class="modern-input" style="padding: 6px;" onchange="handleTiktokSalesUpload(event)">
+                    </div>
+                    <div class="control-group">
+                        <label>2. Fulfillment Inventory (Excel)</label>
+                        <input type="file" id="ttInvUpload" class="modern-input" style="padding: 6px;" onchange="handleTiktokInvUpload(event)">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>3. FSR Data (Optional CSV)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-secondary" onclick="downloadTiktokForecastTemplate()" style="padding: 6px 10px;" title="Download template for currently loaded SKUs">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            </button>
+                            <input type="file" id="ttForecastUpload" class="modern-input" style="padding: 6px; flex-grow: 1;" onchange="handleTiktokForecastUpload(event)">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" onclick="generateTiktokReport()" style="height: 38px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 0 20.49 15"></path></svg>
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-    </main>
 
-    <main id="page-cost" class="page-view">
-        <div class="container">
-            <div class="panel blank-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                <h2>Cost Comparison</h2>
-                <p>This module is under construction. It will allow you to input freight rates to determine exact financial splits.</p>
-                <button class="btn btn-primary" style="margin-top: 16px;" onclick="navigateTo('home')">Return Home</button>
+            <div class="panel" style="padding: 0; overflow: hidden; margin-bottom: 60px;">
+                <div style="padding: 24px; border-bottom: 1px solid var(--border); background: var(--bg-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;">
+                        <div>
+                            <h2 style="margin-bottom: 6px;">Categorized DOS Report</h2>
+                            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Compare your historical Days of Stock (DSR) alongside your projected Days of Stock (FSR).</p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+                                <label style="font-size: 0.75rem; font-weight: 600; margin:0; color: var(--text-muted);">Historical DSR Base:</label>
+                                <select id="ttDosBase" class="modern-input" style="width: auto; height: 26px; padding: 0 8px; font-size: 0.8rem; border: none; font-weight:600; cursor: pointer; background: transparent;" onchange="renderTiktokReport()">
+                                    <option value="DSR_7">7-Day Velocity</option>
+                                    <option value="DSR_14">14-Day Velocity</option>
+                                    <option value="DSR_30" selected>30-Day Velocity</option>
+                                </select>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 4px; background: var(--primary-light); padding: 6px 12px; border-radius: 8px; border: 1px solid #A3B5B5; box-shadow: var(--shadow-sm);">
+                                <label style="font-size: 0.75rem; font-weight: 600; margin:0; color: var(--primary);">Future FSR Base:</label>
+                                <select id="ttFsrBase" class="modern-input" style="width: auto; height: 26px; padding: 0 8px; font-size: 0.8rem; border: none; font-weight:600; cursor: pointer; background: transparent; color: var(--primary);" onchange="renderTiktokReport()">
+                                    <option value="FSR_CURR" selected>Current Month Forecast</option>
+                                    <option value="FSR_3M">Next 3 Months Avg Forecast</option>
+                                </select>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="5" class="header-group border-right" style="background: var(--surface); color: var(--text-main);">Product & Velocity Information</th>
+                                <th colspan="3" class="header-group border-right">In Stock Inventory</th>
+                                <th colspan="3" class="header-group border-right">Receiving Inventory</th>
+                                <th colspan="3" class="header-group">In Transit Inventory</th>
+                            </tr>
+                            <tr style="background: #FAFCFC;">
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>Variation</th>
+                                <th class="text-right" title="Historical Daily Sales Rate">DSR/d</th>
+                                <th class="text-right border-right" style="color: var(--primary);" title="Forecasted Daily Sales Rate">FSR/d</th>
+                                
+                                <th class="text-right">Qty</th>
+                                <th class="text-right" title="Days of Stock based on DSR">DOS<span class="sub-header">(DSR)</span></th>
+                                <th class="text-right border-right" style="color: var(--primary);" title="Days of Stock based on FSR">DOS<span class="sub-header">(FSR)</span></th>
+                                
+                                <th class="text-right">Qty</th>
+                                <th class="text-right" title="Days of Stock based on DSR">DOS<span class="sub-header">(DSR)</span></th>
+                                <th class="text-right border-right" style="color: var(--primary);" title="Days of Stock based on FSR">DOS<span class="sub-header">(FSR)</span></th>
+                                
+                                <th class="text-right">Qty</th>
+                                <th class="text-right" title="Days of Stock based on DSR">DOS<span class="sub-header">(DSR)</span></th>
+                                <th class="text-right" style="color: var(--primary);" title="Days of Stock based on FSR">DOS<span class="sub-header">(FSR)</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ttReportBody">
+                            <tr><td colspan="14" class="text-center" style="padding: 40px; color: var(--text-muted);">Upload files and click Generate Report.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
@@ -493,7 +571,7 @@
         window.scrollTo(0,0);
     }
 
-    // --- SHARED GLOBALS ---
+    // --- SHARED GLOBALS & UTILS ---
     const SHIPPING_TIMES = {
         'AIR': 15,
         'FAST_SEA': 25,
@@ -519,6 +597,319 @@
         if(!dateString) return null;
         let d = new Date(dateString);
         return Math.ceil((d - todayDate) / (1000 * 60 * 60 * 24));
+    }
+
+    function parseCSV(text) {
+        const results = [];
+        let row = [];
+        let val = '';
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let cc = text[i], nc = text[i+1];
+            if (cc === '"' && inQuotes && nc === '"') { val += '"'; i++; continue; }
+            if (cc === '"') { inQuotes = !inQuotes; continue; }
+            if (cc === ',' && !inQuotes) { row.push(val); val = ''; continue; }
+            if ((cc === '\r' || cc === '\n') && !inQuotes) {
+                if (cc === '\r' && nc === '\n') i++;
+                row.push(val); 
+                if(row.length > 1 || row[0] !== '') results.push(row); 
+                row = []; val = ''; 
+                continue;
+            }
+            val += cc;
+        }
+        if (row.length || val) { row.push(val); results.push(row); }
+        return results;
+    }
+
+    // ==========================================
+    // MODULE: TIKTOK INVENTORY
+    // ==========================================
+    let globalTiktokSalesData = [];
+    let globalTiktokInvData = [];
+    let globalTiktokForecastData = []; 
+    let parsedTiktokReport = [];
+
+    function handleTiktokSalesUpload(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                if (file.name.endsWith('.csv')) {
+                    globalTiktokSalesData = parseCSV(e.target.result);
+                } else {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const ws = workbook.Sheets[workbook.SheetNames[0]];
+                    globalTiktokSalesData = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+                }
+            } catch (err) {
+                alert("Error reading Sales file.");
+            }
+        };
+        if(file.name.endsWith('.csv')) reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
+    }
+
+    function handleTiktokInvUpload(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const ws = workbook.Sheets[workbook.SheetNames[0]];
+                globalTiktokInvData = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+            } catch(err) {
+                alert("Error reading Excel file. Please ensure it is a valid .xlsx file.");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Feature 1: Download Dynamic Forecast Template
+    function downloadTiktokForecastTemplate() {
+        if(!parsedTiktokReport || parsedTiktokReport.length === 0) {
+            alert("Please Generate the Report first so the template can populate your SKUs.");
+            return;
+        }
+
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const d = new Date();
+        const cm = d.getMonth();
+
+        // Updated Headers to explicitly clarify mapping logic M0, M1, M2, M3
+        const m0 = `FSR_${monthNames[cm]}_M0(Current)`;
+        const m1 = `FSR_${monthNames[(cm+1)%12]}_M1`;
+        const m2 = `FSR_${monthNames[(cm+2)%12]}_M2`;
+        const m3 = `FSR_${monthNames[(cm+3)%12]}_M3`;
+
+        const headers = ["SKU", "Product_Name", m0, m1, m2, m3];
+        
+        let csvContent = headers.join(",") + "\n";
+        
+        parsedTiktokReport.forEach(item => {
+            let safeName = `"${item.name.replace(/"/g, '""')}"`;
+            csvContent += `${item.sku},${safeName},0,0,0,0\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TikTok_FSR_Template_${monthNames[cm]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Feature 2: Upload Forecast Template and merge
+    function handleTiktokForecastUpload(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            globalTiktokForecastData = parseCSV(e.target.result);
+            
+            if (globalTiktokSalesData.length > 0 && globalTiktokInvData.length > 0) {
+                generateTiktokReport();
+                document.getElementById('ttFsrBase').value = "FSR_CURR";
+                renderTiktokReport();
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function generateTiktokReport() {
+        if (globalTiktokSalesData.length < 2 || globalTiktokInvData.length < 2) {
+            alert("Please ensure both the Historical Sales and the Fulfillment Inventory files are uploaded.");
+            return;
+        }
+
+        const sHeaders = globalTiktokSalesData[0].map(h => String(h).replace(/^"|"$/g, '').trim());
+        const iHeaders = globalTiktokInvData[0].map(h => String(h).replace(/^"|"$/g, '').trim());
+
+        // Sales Indexes
+        const idxDate = sHeaders.findIndex(h => h.includes('Created Time'));
+        const idxSku = sHeaders.findIndex(h => h.includes('Seller SKU'));
+        const idxName = sHeaders.findIndex(h => h.includes('Product Name'));
+        const idxVar = sHeaders.findIndex(h => h.includes('Variation'));
+        const idxQty = sHeaders.findIndex(h => h === 'Quantity');
+        const idxStatus = sHeaders.findIndex(h => h.includes('Order Status'));
+
+        // Inventory Indexes
+        const idxInvSku = iHeaders.findIndex(h => h.includes('Reference code'));
+        const idxInvName = iHeaders.findIndex(h => h.includes('Goods name'));
+        
+        // Extracting new Categories
+        const idxInvAvail = iHeaders.findIndex(h => h.includes('Available inventory'));
+        const idxInvRec = iHeaders.findIndex(h => h.includes('Receiving Quantity') || h.includes('Receiving'));
+        const idxInvShip = iHeaders.findIndex(h => h.includes('Shipped Quantity') || h.includes('In Transit'));
+
+        if(idxDate < 0 || idxSku < 0 || idxQty < 0 || idxInvSku < 0 || idxInvAvail < 0) {
+            alert("Could not map all required columns. Please check your file formats.");
+            return;
+        }
+
+        let validSales = [];
+        let maxDate = 0;
+        
+        for(let i=1; i<globalTiktokSalesData.length; i++) {
+            let row = globalTiktokSalesData[i];
+            if(row.length <= idxDate) continue;
+            
+            let status = idxStatus >= 0 ? String(row[idxStatus] || '').trim().toLowerCase() : '';
+            if(status === 'cancelled' || status === 'canceled') continue;
+            
+            let rawDate = String(row[idxDate] || '').replace(/\t/g, '').trim();
+            let dateObj = new Date(rawDate);
+            if(isNaN(dateObj.getTime())) continue;
+            
+            let t = dateObj.getTime();
+            if(t > maxDate) maxDate = t;
+            
+            validSales.push({
+                date: dateObj,
+                sku: String(row[idxSku] || '').trim(),
+                name: idxName >= 0 ? String(row[idxName] || '').trim() : '',
+                variation: idxVar >= 0 ? String(row[idxVar] || '').trim() : '',
+                qty: parseInt(String(row[idxQty] || '0').trim()) || 0
+            });
+        }
+
+        let skuMap = {};
+        
+        validSales.forEach(s => {
+            if(!skuMap[s.sku]) {
+                skuMap[s.sku] = { sku: s.sku, name: s.name, variation: s.variation, q7: 0, q14: 0, q30: 0, invStock: 0, invRec: 0, invTran: 0, fsr_curr: 0, fsr_3m: 0 };
+            }
+            if(!skuMap[s.sku].name && s.name) skuMap[s.sku].name = s.name;
+            if(!skuMap[s.sku].variation && s.variation) skuMap[s.sku].variation = s.variation;
+
+            let diffDays = Math.floor((maxDate - s.date.getTime()) / (1000*60*60*24));
+            if(diffDays < 7) skuMap[s.sku].q7 += s.qty;
+            if(diffDays < 14) skuMap[s.sku].q14 += s.qty;
+            if(diffDays < 30) skuMap[s.sku].q30 += s.qty;
+        });
+
+        for(let i=1; i<globalTiktokInvData.length; i++) {
+            let row = globalTiktokInvData[i];
+            if(row.length <= idxInvAvail) continue;
+            
+            let sku = String(row[idxInvSku] || '').trim();
+            if(!sku) continue;
+            
+            let iStock = parseInt(String(row[idxInvAvail] || '0').trim()) || 0;
+            let iRec = idxInvRec >= 0 ? parseInt(String(row[idxInvRec] || '0').trim()) || 0 : 0;
+            let iShip = idxInvShip >= 0 ? parseInt(String(row[idxInvShip] || '0').trim()) || 0 : 0;
+            
+            let gName = idxInvName >= 0 ? String(row[idxInvName] || '').trim() : '';
+            
+            if(!skuMap[sku]) {
+                skuMap[sku] = { sku: sku, name: gName, variation: '-', q7: 0, q14: 0, q30: 0, invStock: 0, invRec: 0, invTran: 0, fsr_curr: 0, fsr_3m: 0 };
+            }
+            
+            skuMap[sku].invStock += iStock;
+            skuMap[sku].invRec += iRec;
+            skuMap[sku].invTran += iShip;
+        }
+
+        // --- Apply FSR Data directly from Global Array ---
+        if (globalTiktokForecastData && globalTiktokForecastData.length >= 2) {
+            for(let i = 1; i < globalTiktokForecastData.length; i++) {
+                let row = globalTiktokForecastData[i];
+                if(row.length < 6) continue;
+                
+                let sku = String(row[0]).trim();
+                let m0 = parseFloat(String(row[2]).trim()) || 0; // Current Month (M0)
+                let m1 = parseFloat(String(row[3]).trim()) || 0; // Next Month (M1)
+                let m2 = parseFloat(String(row[4]).trim()) || 0; // 2nd Month Out (M2)
+                let m3 = parseFloat(String(row[5]).trim()) || 0; // 3rd Month Out (M3)
+
+                if(skuMap[sku]) {
+                    skuMap[sku].fsr_curr = m0; 
+                    skuMap[sku].fsr_3m = (m1 + m2 + m3) / 3.0; // Average of next 3 months (M1, M2, M3)
+                }
+            }
+        }
+
+        parsedTiktokReport = Object.values(skuMap);
+        renderTiktokReport();
+    }
+
+    function renderTiktokReport() {
+        const tbody = document.getElementById('ttReportBody');
+        if(!parsedTiktokReport || parsedTiktokReport.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="14" class="text-center" style="padding: 40px; color: var(--text-muted);">No data found. Please generate the report again.</td></tr>';
+            return;
+        }
+
+        const dsrBase = document.getElementById('ttDosBase').value;
+        const fsrBase = document.getElementById('ttFsrBase').value;
+        
+        tbody.innerHTML = '';
+        parsedTiktokReport.forEach(item => {
+            let dsr7 = item.q7 / 7.0;
+            let dsr14 = item.q14 / 14.0;
+            let dsr30 = item.q30 / 30.0;
+            
+            let activeDSR = 0;
+            if(dsrBase === 'DSR_7') activeDSR = dsr7;
+            else if(dsrBase === 'DSR_14') activeDSR = dsr14;
+            else if(dsrBase === 'DSR_30') activeDSR = dsr30;
+
+            let activeFSR = 0;
+            if(fsrBase === 'FSR_CURR') activeFSR = item.fsr_curr;
+            else if(fsrBase === 'FSR_3M') activeFSR = item.fsr_3m;
+
+            function calcDOS(qty, rate) {
+                if (rate <= 0) return qty > 0 ? '999+' : 0;
+                return qty / rate;
+            }
+
+            function formatDOS(dosVal) {
+                if (dosVal === '999+') return { text: '999+', color: 'var(--success-text)', bg: 'background: var(--success-bg);', w: '700' };
+                let val = Math.round(dosVal);
+                if(val <= 14) return { text: val.toLocaleString(), color: 'var(--danger-text)', bg: 'background: var(--danger-bg);', w: '700' };
+                if(val <= 30) return { text: val.toLocaleString(), color: 'var(--warning-text)', bg: 'background: var(--warning-bg);', w: '700' };
+                return { text: val.toLocaleString(), color: 'var(--success-text)', bg: 'background: var(--success-bg);', w: '700' };
+            }
+
+            // DOS Calcs based on DSR
+            let d_dosStock = formatDOS(calcDOS(item.invStock, activeDSR));
+            let d_dosRec = formatDOS(calcDOS(item.invRec, activeDSR));
+            let d_dosTran = formatDOS(calcDOS(item.invTran, activeDSR));
+
+            // DOS Calcs based on FSR
+            let f_dosStock = formatDOS(calcDOS(item.invStock, activeFSR));
+            let f_dosRec = formatDOS(calcDOS(item.invRec, activeFSR));
+            let f_dosTran = formatDOS(calcDOS(item.invTran, activeFSR));
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight: 600;">${item.sku}</td>
+                <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.name}">${item.name}</td>
+                <td style="color: var(--text-muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.variation}</td>
+                <td class="text-right" style="font-weight: 600;">${activeDSR.toFixed(2)}</td>
+                <td class="text-right border-right" style="font-weight: 600; color: var(--primary);">${activeFSR.toFixed(2)}</td>
+                
+                <td class="text-right">${item.invStock.toLocaleString()}</td>
+                <td class="text-right" style="color: ${d_dosStock.color}; font-weight: ${d_dosStock.w}; ${d_dosStock.bg} border-radius:4px;">${d_dosStock.text}</td>
+                <td class="text-right border-right" style="color: ${f_dosStock.color}; font-weight: ${f_dosStock.w}; ${f_dosStock.bg} border-radius:4px;">${f_dosStock.text}</td>
+                
+                <td class="text-right">${item.invRec.toLocaleString()}</td>
+                <td class="text-right" style="color: ${d_dosRec.color}; font-weight: ${d_dosRec.w}; ${d_dosRec.bg} border-radius:4px;">${d_dosRec.text}</td>
+                <td class="text-right border-right" style="color: ${f_dosRec.color}; font-weight: ${f_dosRec.w}; ${f_dosRec.bg} border-radius:4px;">${f_dosRec.text}</td>
+                
+                <td class="text-right">${item.invTran.toLocaleString()}</td>
+                <td class="text-right" style="color: ${d_dosTran.color}; font-weight: ${d_dosTran.w}; ${d_dosTran.bg} border-radius:4px;">${d_dosTran.text}</td>
+                <td class="text-right" style="color: ${f_dosTran.color}; font-weight: ${f_dosTran.w}; ${f_dosTran.bg} border-radius:4px;">${f_dosTran.text}</td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     // ==========================================
@@ -755,7 +1146,6 @@
             `;
             dashboardBody.appendChild(row);
 
-            // --- FORECAST CHART LOGIC ---
             if (card.classList.contains('collapsed')) return;
 
             let mMinus1 = d30 * 30;
